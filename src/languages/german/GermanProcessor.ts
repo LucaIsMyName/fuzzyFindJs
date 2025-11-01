@@ -1,5 +1,5 @@
-import { BaseLanguageProcessor } from '../base/LanguageProcessor.js';
-import type { FuzzyFeature } from '../../core/types.js';
+import { BaseLanguageProcessor } from "../base/LanguageProcessor.js";
+import type { FuzzyFeature } from "../../core/types.js";
 
 /**
  * German language processor with specialized features:
@@ -9,31 +9,25 @@ import type { FuzzyFeature } from '../../core/types.js';
  * - Common German word endings
  */
 export class GermanProcessor extends BaseLanguageProcessor {
-  readonly language = 'german';
-  readonly displayName = 'Deutsch';
-  readonly supportedFeatures: FuzzyFeature[] = [
-    'phonetic',
-    'compound',
-    'synonyms',
-    'keyboard-neighbors',
-    'partial-words',
-    'missing-letters',
-    'extra-letters'
-  ];
+  readonly language = "german";
+  readonly displayName = "Deutsch";
+  readonly supportedFeatures: FuzzyFeature[] = ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters"];
 
   /**
    * German text normalization with umlaut handling
    */
   normalize(text: string): string {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, ' ')
-      // Normalize umlauts
-      .replace(/ä/g, 'ae')
-      .replace(/ö/g, 'oe')
-      .replace(/ü/g, 'ue')
-      .replace(/ß/g, 'ss');
+    return (
+      text
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ")
+        // Normalize umlauts
+        .replace(/ä/g, "ae")
+        .replace(/ö/g, "oe")
+        .replace(/ü/g, "ue")
+        .replace(/ß/g, "ss")
+    );
   }
 
   /**
@@ -41,91 +35,90 @@ export class GermanProcessor extends BaseLanguageProcessor {
    */
   getPhoneticCode(word: string): string {
     const normalized = this.normalize(word);
-    if (normalized.length === 0) return '';
+    if (normalized.length === 0) return "";
 
-    let code = '';
-    let prev = '';
+    let code = "";
+    let prev = "";
 
     for (let i = 0; i < normalized.length; i++) {
       const char = normalized[i];
-      const next = i < normalized.length - 1 ? normalized[i + 1] : '';
-      let digit = '';
+      const next = i < normalized.length - 1 ? normalized[i + 1] : "";
+      let digit = "";
 
       switch (char) {
-        case 'a':
-        case 'e':
-        case 'i':
-        case 'j':
-        case 'o':
-        case 'u':
-        case 'y':
-          digit = '0';
+        case "a":
+        case "e":
+        case "i":
+        case "j":
+        case "o":
+        case "u":
+        case "y":
+          digit = "0";
           break;
-        case 'h':
+        case "h":
           // H is ignored
           continue;
-        case 'b':
-        case 'p':
-          digit = '1';
+        case "b":
+        case "p":
+          digit = "1";
           break;
-        case 'd':
-        case 't':
-          if (next === 'c' || next === 's' || next === 'z') {
-            digit = '8';
+        case "d":
+        case "t":
+          if (next === "c" || next === "s" || next === "z") {
+            digit = "8";
           } else {
-            digit = '2';
+            digit = "2";
           }
           break;
-        case 'f':
-        case 'v':
-        case 'w':
-          digit = '3';
+        case "f":
+        case "v":
+        case "w":
+          digit = "3";
           break;
-        case 'g':
-        case 'k':
-        case 'q':
-          digit = '4';
+        case "g":
+        case "k":
+        case "q":
+          digit = "4";
           break;
-        case 'c':
+        case "c":
           if (i === 0) {
-            if (next === 'a' || next === 'h' || next === 'k' || next === 'l' || 
-                next === 'o' || next === 'q' || next === 'r' || next === 'u' || next === 'x') {
-              digit = '4';
+            if (next === "a" || next === "h" || next === "k" || next === "l" || next === "o" || next === "q" || next === "r" || next === "u" || next === "x") {
+              digit = "4";
             } else {
-              digit = '8';
+              digit = "8";
             }
           } else {
-            if (prev === 's' || prev === 'z') {
-              digit = '8';
-            } else if (next === 'h') {
-              digit = '4';
-            } else if (next === 'k' || next === 'q') {
-              digit = '4';
+            if (prev === "s" || prev === "z") {
+              digit = "8";
+            } else if (next === "h") {
+              digit = "4";
+            } else if (next === "k" || next === "q") {
+              digit = "4";
             } else {
-              digit = '8';
+              digit = "8";
             }
           }
           break;
-        case 'x':
-          if (prev === 'c' || prev === 'k' || prev === 'q') {
-            digit = '8';
+        case "x":
+          if (prev === "c" || prev === "k" || prev === "q") {
+            digit = "8";
           } else {
-            digit = '48';
+            digit = "48";
           }
           break;
-        case 'l':
-          digit = '5';
+        case "l":
+          digit = "5";
           break;
-        case 'm':
-        case 'n':
-          digit = '6';
+        case "m":
+        case "n":
+          digit = "6";
           break;
-        case 'r':
-          digit = '7';
+        case "r":
+          digit = "7";
           break;
-        case 's':
-        case 'z':
-          digit = '8';
+        case "s":
+        case "z":
+          digit = "8";
           break;
         default:
           continue;
@@ -138,7 +131,7 @@ export class GermanProcessor extends BaseLanguageProcessor {
       prev = digit;
     }
 
-    return code || '0';
+    return code || "0";
   }
 
   /**
@@ -181,7 +174,7 @@ export class GermanProcessor extends BaseLanguageProcessor {
       for (let i = 3; i <= normalized.length - 3; i++) {
         const leftPart = normalized.slice(0, i);
         const rightPart = normalized.slice(i);
-        
+
         if (commonWords.has(leftPart) && rightPart.length >= 3) {
           parts.push(leftPart);
           parts.push(...this.splitCompoundWords(rightPart));
@@ -199,13 +192,13 @@ export class GermanProcessor extends BaseLanguageProcessor {
   getWordVariants(word: string): string[] {
     const variants = new Set<string>();
     const normalized = this.normalize(word);
-    
+
     variants.add(normalized);
     variants.add(word);
 
     // Add compound word parts
     const compoundParts = this.splitCompoundWords(word);
-    compoundParts.forEach(part => variants.add(this.normalize(part)));
+    compoundParts.forEach((part) => variants.add(this.normalize(part)));
 
     // Add variants without German endings
     const germanEndings = this.getCommonEndings();
@@ -230,9 +223,27 @@ export class GermanProcessor extends BaseLanguageProcessor {
    */
   protected getCommonEndings(): string[] {
     return [
-      'en', 'e', 'er', 'n', 'r', 's', 'es', 't',
-      'ung', 'heit', 'keit', 'schaft', 'chen', 'lein',
-      'lich', 'ig', 'isch', 'bar', 'los', 'voll'
+      //
+      "en",
+      "e",
+      "er",
+      "n",
+      "r",
+      "s",
+      "es",
+      "t",
+      "ung",
+      "heit",
+      "keit",
+      "schaft",
+      "chen",
+      "lein",
+      "lich",
+      "ig",
+      "isch",
+      "bar",
+      "los",
+      "voll",
     ];
   }
 
@@ -241,16 +252,65 @@ export class GermanProcessor extends BaseLanguageProcessor {
    */
   getSynonyms(word: string): string[] {
     const synonymMap: Record<string, string[]> = {
-      'arzt': ['doktor', 'mediziner', 'doc'],
-      'krankenhaus': ['spital', 'klinik', 'hospital'],
-      'schule': ['bildungseinrichtung', 'lehranstalt'],
-      'auto': ['wagen', 'fahrzeug', 'pkw'],
-      'haus': ['gebaeude', 'heim', 'wohnhaus'],
-      'strasse': ['weg', 'gasse', 'allee'],
-      'stadt': ['ort', 'gemeinde', 'ortschaft'],
-      'arbeit': ['job', 'beruf', 'taetigkeit'],
-      'geld': ['waehrung', 'kapital', 'finanzen'],
-      'zeit': ['dauer', 'periode', 'zeitraum']
+      arzt: [
+        //
+        "doktor",
+        "mediziner",
+        "doc",
+      ],
+      krankenhaus: [
+        //
+        "spital",
+        "klinik",
+        "hospital",
+      ],
+      schule: [
+        //
+        "bildungseinrichtung",
+        "lehranstalt",
+      ],
+      auto: [
+        //
+        "wagen",
+        "fahrzeug",
+        "pkw",
+      ],
+      haus: [
+        //
+        "gebaeude",
+        "heim",
+        "wohnhaus",
+      ],
+      strasse: [
+        //
+        "weg",
+        "gasse",
+        "allee",
+      ],
+      stadt: [
+        //
+        "ort",
+        "gemeinde",
+        "ortschaft",
+      ],
+      arbeit: [
+        //
+        "job",
+        "beruf",
+        "taetigkeit",
+      ],
+      geld: [
+        //
+        "waehrung",
+        "kapital",
+        "finanzen",
+      ],
+      zeit: [
+        //
+        "dauer",
+        "periode",
+        "zeitraum",
+      ],
     };
 
     const normalized = this.normalize(word);
@@ -262,35 +322,244 @@ export class GermanProcessor extends BaseLanguageProcessor {
    */
   protected getKeyboardNeighbors(): Record<string, string[]> {
     return {
-      'q': ['w', 'a', 's'],
-      'w': ['q', 'e', 'a', 's', 'd'],
-      'e': ['w', 'r', 's', 'd', 'f'],
-      'r': ['e', 't', 'd', 'f', 'g'],
-      't': ['r', 'z', 'f', 'g', 'h'],
-      'z': ['t', 'u', 'g', 'h', 'j'], // QWERTZ difference
-      'u': ['z', 'i', 'h', 'j', 'k'],
-      'i': ['u', 'o', 'j', 'k', 'l'],
-      'o': ['i', 'p', 'k', 'l', 'oe'],
-      'p': ['o', 'ue', 'l', 'oe'],
-      'ue': ['p', 'ae'], // German umlaut
-      'a': ['q', 'w', 's', 'y', 'x'],
-      's': ['q', 'w', 'e', 'a', 'd', 'y', 'x', 'c'],
-      'd': ['w', 'e', 'r', 's', 'f', 'x', 'c', 'v'],
-      'f': ['e', 'r', 't', 'd', 'g', 'c', 'v', 'b'],
-      'g': ['r', 't', 'z', 'f', 'h', 'v', 'b', 'n'],
-      'h': ['t', 'z', 'u', 'g', 'j', 'b', 'n', 'm'],
-      'j': ['z', 'u', 'i', 'h', 'k', 'n', 'm'],
-      'k': ['u', 'i', 'o', 'j', 'l', 'm'],
-      'l': ['i', 'o', 'p', 'k', 'oe'],
-      'oe': ['o', 'p', 'ue', 'l', 'ae'], // German umlaut
-      'ae': ['ue', 'oe'], // German umlaut
-      'y': ['a', 's', 'x'], // QWERTZ difference
-      'x': ['a', 's', 'd', 'y', 'c'],
-      'c': ['s', 'd', 'f', 'x', 'v'],
-      'v': ['d', 'f', 'g', 'c', 'b'],
-      'b': ['f', 'g', 'h', 'v', 'n'],
-      'n': ['g', 'h', 'j', 'b', 'm'],
-      'm': ['h', 'j', 'k', 'n']
+      q: [
+        //
+        "w",
+        "a",
+        "s",
+      ],
+      w: [
+        //
+        "q",
+        "e",
+        "a",
+        "s",
+        "d",
+      ],
+      e: [
+        //
+        "w",
+        "r",
+        "s",
+        "d",
+        "f",
+      ],
+      r: [
+        //
+        "e",
+        "t",
+        "d",
+        "f",
+        "g",
+      ],
+      t: [
+        //
+        "r",
+        "z",
+        "f",
+        "g",
+        "h",
+      ],
+      z: [
+        //
+        "t",
+        "u",
+        "g",
+        "h",
+        "j",
+      ], // QWERTZ difference
+      u: [
+        //
+        "z",
+        "i",
+        "h",
+        "j",
+        "k",
+      ],
+      i: [
+        //
+        "u",
+        "o",
+        "j",
+        "k",
+        "l",
+      ],
+      o: [
+        //
+        "i",
+        "p",
+        "k",
+        "l",
+        "oe",
+      ],
+      p: [
+        //
+        "o",
+        "ue",
+        "l",
+        "oe",
+      ],
+      ue: [
+        //
+        "p",
+        "ae",
+      ], // German umlaut
+      a: [
+        //
+        "q",
+        "w",
+        "s",
+        "y",
+        "x",
+      ],
+      s: [
+        //
+        "q",
+        "w",
+        "e",
+        "a",
+        "d",
+        "y",
+        "x",
+        "c",
+      ],
+      d: [
+        //
+        "w",
+        "e",
+        "r",
+        "s",
+        "f",
+        "x",
+        "c",
+        "v",
+      ],
+      f: [
+        //
+        "e",
+        "r",
+        "t",
+        "d",
+        "g",
+        "c",
+        "v",
+        "b",
+      ],
+      g: [
+        //
+        "r",
+        "t",
+        "z",
+        "f",
+        "h",
+        "v",
+        "b",
+        "n",
+      ],
+      h: [
+        //
+        "t",
+        "z",
+        "u",
+        "g",
+        "j",
+        "b",
+        "n",
+        "m",
+      ],
+      j: [
+        //
+        "z",
+        "u",
+        "i",
+        "h",
+        "k",
+        "n",
+        "m",
+      ],
+      k: [
+        //
+        "u",
+        "i",
+        "o",
+        "j",
+        "l",
+        "m",
+      ],
+      l: [
+        //
+        "i",
+        "o",
+        "p",
+        "k",
+        "oe",
+      ],
+      oe: [
+        //
+        "o",
+        "p",
+        "ue",
+        "l",
+        "ae",
+      ], // German umlaut
+      ae: [
+        //
+        "ue",
+        "oe",
+      ], // German umlaut
+      y: [
+        //
+        "a",
+        "s",
+        "x",
+      ], // QWERTZ difference
+      x: [
+        //
+        "a",
+        "s",
+        "d",
+        "y",
+        "c",
+      ],
+      c: [
+        //
+        "s",
+        "d",
+        "f",
+        "x",
+        "v",
+      ],
+      v: [
+        //
+        "d",
+        "f",
+        "g",
+        "c",
+        "b",
+      ],
+      b: [
+        //
+        "f",
+        "g",
+        "h",
+        "v",
+        "n",
+      ],
+      n: [
+        //
+        "g",
+        "h",
+        "j",
+        "b",
+        "m",
+      ],
+      m: [
+        //
+        "h",
+        "j",
+        "k",
+        "n",
+      ],
     };
   }
 
@@ -298,33 +567,20 @@ export class GermanProcessor extends BaseLanguageProcessor {
    * Common German prefixes for compound word splitting
    */
   private getCommonPrefixes(): string[] {
-    return [
-      'un', 'vor', 'nach', 'bei', 'mit', 'ab', 'an', 'auf', 'aus', 'ein',
-      'gegen', 'hinter', 'neben', 'ueber', 'unter', 'zwischen', 'selbst'
-    ];
+    return ["un", "vor", "nach", "bei", "mit", "ab", "an", "auf", "aus", "ein", "gegen", "hinter", "neben", "ueber", "unter", "zwischen", "selbst"];
   }
 
   /**
    * Common German suffixes for compound word splitting
    */
   private getCommonSuffixes(): string[] {
-    return [
-      'haus', 'platz', 'strasse', 'weg', 'hof', 'berg', 'tal', 'feld',
-      'stadt', 'dorf', 'heim', 'werk', 'bau', 'anlage', 'zentrum'
-    ];
+    return ["haus", "platz", "strasse", "weg", "hof", "berg", "tal", "feld", "stadt", "dorf", "heim", "werk", "bau", "anlage", "zentrum"];
   }
 
   /**
    * Common German words for compound splitting
    */
   private getCommonWords(): Set<string> {
-    return new Set([
-      'kranken', 'kinder', 'frauen', 'maenner', 'alt', 'neu', 'gross', 'klein',
-      'hoch', 'tief', 'lang', 'kurz', 'breit', 'schmal', 'dick', 'duenn',
-      'stark', 'schwach', 'schnell', 'langsam', 'heiss', 'kalt', 'warm',
-      'auto', 'bahn', 'bus', 'zug', 'flug', 'schiff', 'rad', 'motor',
-      'wasser', 'feuer', 'erde', 'luft', 'licht', 'schatten', 'sonne', 'mond',
-      'tag', 'nacht', 'morgen', 'abend', 'mittag', 'zeit', 'jahr', 'monat'
-    ]);
+    return new Set(["kranken", "kinder", "frauen", "maenner", "alt", "neu", "gross", "klein", "hoch", "tief", "lang", "kurz", "breit", "schmal", "dick", "duenn", "stark", "schwach", "schnell", "langsam", "heiss", "kalt", "warm", "auto", "bahn", "bus", "zug", "flug", "schiff", "rad", "motor", "wasser", "feuer", "erde", "luft", "licht", "schatten", "sonne", "mond", "tag", "nacht", "morgen", "abend", "mittag", "zeit", "jahr", "monat"]);
   }
 }

@@ -8,14 +8,14 @@
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/types/index.d.ts",
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/types/index.d.ts"
+      "require": "./dist/cjs/index.js"
     },
     "./languages/*": {
+      "types": "./dist/types/languages/*.d.ts",
       "import": "./dist/esm/languages/*.js",
-      "require": "./dist/cjs/languages/*.js",
-      "types": "./dist/types/languages/*.d.ts"
+      "require": "./dist/cjs/languages/*.js"
     }
   },
   "files": [
@@ -26,9 +26,10 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:types && npm run build:esm && npm run build:cjs",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
+    "build:types": "tsc --project tsconfig.build.json",
     "build:esm": "vite build --config vite.config.esm.ts",
     "build:cjs": "vite build --config vite.config.cjs.ts",
+    "verify": "node scripts/verify-build.js",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "preview": "vite preview",
@@ -45,12 +46,16 @@
     "typescript",
     "multilingual"
   ],
-  "author": "Your Name",
+  "author": "Luca Mack",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/fuzzyfindjs.git"
+    "url": "https://github.com/LucaIsMyName/fuzzyfindjs.git"
   },
+  "bugs": {
+    "url": "https://github.com/LucaIsMyName/fuzzyfindjs/issues"
+  },
+  "homepage": "https://github.com/LucaIsMyName/fuzzyfindjs#readme",
   "devDependencies": {
     "@types/node": "^22.18.13",
     "typescript": "~5.9.3",

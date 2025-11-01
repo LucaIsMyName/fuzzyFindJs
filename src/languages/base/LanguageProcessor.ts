@@ -1,4 +1,4 @@
-import type { LanguageProcessor, FuzzyFeature } from '../../core/types.js';
+import type { LanguageProcessor, FuzzyFeature } from "../../core/types.js";
 
 /**
  * Abstract base class for language processors
@@ -13,10 +13,7 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
    * Basic text normalization (override for language-specific behavior)
    */
   normalize(text: string): string {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, ' ');
+    return text.toLowerCase().trim().replace(/\s+/g, " ");
   }
 
   /**
@@ -25,18 +22,30 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
   getPhoneticCode(word: string): string {
     // Simple soundex-like algorithm as fallback
     const normalized = this.normalize(word);
-    if (normalized.length === 0) return '';
-    
+    if (normalized.length === 0) return "";
+
     let code = normalized[0].toUpperCase();
     const consonantMap: Record<string, string> = {
-      'b': '1', 'f': '1', 'p': '1', 'v': '1',
-      'c': '2', 'g': '2', 'j': '2', 'k': '2', 'q': '2', 's': '2', 'x': '2', 'z': '2',
-      'd': '3', 't': '3',
-      'l': '4',
-      'm': '5', 'n': '5',
-      'r': '6'
+      b: "1",
+      f: "1",
+      p: "1",
+      v: "1",
+      c: "2",
+      g: "2",
+      j: "2",
+      k: "2",
+      q: "2",
+      s: "2",
+      x: "2",
+      z: "2",
+      d: "3",
+      t: "3",
+      l: "4",
+      m: "5",
+      n: "5",
+      r: "6",
     };
-    
+
     for (let i = 1; i < normalized.length && code.length < 4; i++) {
       const char = normalized[i];
       const digit = consonantMap[char];
@@ -44,8 +53,8 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
         code += digit;
       }
     }
-    
-    return code.padEnd(4, '0');
+
+    return code.padEnd(4, "0");
   }
 
   /**
@@ -61,10 +70,10 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
   getWordVariants(word: string): string[] {
     const variants = new Set<string>();
     const normalized = this.normalize(word);
-    
+
     variants.add(normalized);
     variants.add(word); // Original form
-    
+
     // Add variants without common endings
     const commonEndings = this.getCommonEndings();
     for (const ending of commonEndings) {
@@ -72,14 +81,14 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
         variants.add(normalized.slice(0, -ending.length));
       }
     }
-    
+
     // Add partial variants for longer words
     if (normalized.length > 4) {
       for (let i = 3; i < normalized.length; i++) {
         variants.add(normalized.slice(0, i));
       }
     }
-    
+
     return Array.from(variants);
   }
 
@@ -87,7 +96,7 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
    * Get common word endings for this language (override for language-specific endings)
    */
   protected getCommonEndings(): string[] {
-    return ['s', 'es', 'ed', 'ing', 'er', 'est'];
+    return ["s", "es", "ed", "ing", "er", "est"];
   }
 
   /**
@@ -111,32 +120,32 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
    */
   protected getKeyboardNeighbors(): Record<string, string[]> {
     return {
-      'q': ['w', 'a', 's'],
-      'w': ['q', 'e', 'a', 's', 'd'],
-      'e': ['w', 'r', 's', 'd', 'f'],
-      'r': ['e', 't', 'd', 'f', 'g'],
-      't': ['r', 'y', 'f', 'g', 'h'],
-      'y': ['t', 'u', 'g', 'h', 'j'],
-      'u': ['y', 'i', 'h', 'j', 'k'],
-      'i': ['u', 'o', 'j', 'k', 'l'],
-      'o': ['i', 'p', 'k', 'l'],
-      'p': ['o', 'l'],
-      'a': ['q', 'w', 's', 'z', 'x'],
-      's': ['q', 'w', 'e', 'a', 'd', 'z', 'x', 'c'],
-      'd': ['w', 'e', 'r', 's', 'f', 'x', 'c', 'v'],
-      'f': ['e', 'r', 't', 'd', 'g', 'c', 'v', 'b'],
-      'g': ['r', 't', 'y', 'f', 'h', 'v', 'b', 'n'],
-      'h': ['t', 'y', 'u', 'g', 'j', 'b', 'n', 'm'],
-      'j': ['y', 'u', 'i', 'h', 'k', 'n', 'm'],
-      'k': ['u', 'i', 'o', 'j', 'l', 'm'],
-      'l': ['i', 'o', 'p', 'k'],
-      'z': ['a', 's', 'x'],
-      'x': ['a', 's', 'd', 'z', 'c'],
-      'c': ['s', 'd', 'f', 'x', 'v'],
-      'v': ['d', 'f', 'g', 'c', 'b'],
-      'b': ['f', 'g', 'h', 'v', 'n'],
-      'n': ['g', 'h', 'j', 'b', 'm'],
-      'm': ['h', 'j', 'k', 'n']
+      q: ["w", "a", "s"],
+      w: ["q", "e", "a", "s", "d"],
+      e: ["w", "r", "s", "d", "f"],
+      r: ["e", "t", "d", "f", "g"],
+      t: ["r", "y", "f", "g", "h"],
+      y: ["t", "u", "g", "h", "j"],
+      u: ["y", "i", "h", "j", "k"],
+      i: ["u", "o", "j", "k", "l"],
+      o: ["i", "p", "k", "l"],
+      p: ["o", "l"],
+      a: ["q", "w", "s", "z", "x"],
+      s: ["q", "w", "e", "a", "d", "z", "x", "c"],
+      d: ["w", "e", "r", "s", "f", "x", "c", "v"],
+      f: ["e", "r", "t", "d", "g", "c", "v", "b"],
+      g: ["r", "t", "y", "f", "h", "v", "b", "n"],
+      h: ["t", "y", "u", "g", "j", "b", "n", "m"],
+      j: ["y", "u", "i", "h", "k", "n", "m"],
+      k: ["u", "i", "o", "j", "l", "m"],
+      l: ["i", "o", "p", "k"],
+      z: ["a", "s", "x"],
+      x: ["a", "s", "d", "z", "c"],
+      c: ["s", "d", "f", "x", "v"],
+      v: ["d", "f", "g", "c", "b"],
+      b: ["f", "g", "h", "v", "n"],
+      n: ["g", "h", "j", "b", "m"],
+      m: ["h", "j", "k", "n"],
     };
   }
 
@@ -146,7 +155,7 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
   generateNgrams(word: string, n: number = 3): string[] {
     const normalized = this.normalize(word);
     if (normalized.length < n) return [normalized];
-    
+
     const ngrams: string[] = [];
     for (let i = 0; i <= normalized.length - n; i++) {
       ngrams.push(normalized.slice(i, i + n));
@@ -175,8 +184,8 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
       for (let j = 1; j <= len2; j++) {
         const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
         matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,     // deletion
-          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1, // deletion
+          matrix[i][j - 1] + 1, // insertion
           matrix[i - 1][j - 1] + cost // substitution
         );
       }

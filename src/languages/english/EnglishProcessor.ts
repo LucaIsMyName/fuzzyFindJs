@@ -253,24 +253,129 @@ export class EnglishProcessor extends BaseLanguageProcessor {
    */
   getSynonyms(word: string): string[] {
     const synonymMap: Record<string, string[]> = {
-      doctor: ["physician", "medic", "doc", "md"],
-      hospital: ["clinic", "medical center", "infirmary"],
-      school: ["academy", "institution", "college", "university"],
-      car: ["vehicle", "automobile", "auto"],
-      house: ["home", "residence", "dwelling", "building"],
-      street: ["road", "avenue", "lane", "boulevard"],
-      city: ["town", "municipality", "urban area"],
-      work: ["job", "employment", "occupation", "career"],
-      money: ["cash", "currency", "funds", "capital"],
-      time: ["duration", "period", "moment", "hour"],
-      big: ["large", "huge", "enormous", "massive", "giant"],
-      small: ["little", "tiny", "miniature", "petite"],
-      fast: ["quick", "rapid", "speedy", "swift"],
-      slow: ["sluggish", "gradual", "leisurely"],
-      good: ["excellent", "great", "wonderful", "fine"],
-      bad: ["poor", "terrible", "awful", "horrible"],
-      happy: ["joyful", "cheerful", "glad", "pleased"],
-      sad: ["unhappy", "depressed", "melancholy", "sorrowful"],
+      doctor: [
+        //
+        "physician",
+        "medic",
+        "doc",
+        "md",
+      ],
+      hospital: [
+        //
+        "clinic",
+        "medical center",
+        "infirmary",
+      ],
+      school: [
+        //
+        "academy",
+        "institution",
+        "college",
+        "university",
+      ],
+      car: [
+        //
+        "vehicle",
+        "automobile",
+        "auto",
+      ],
+      house: [
+        //
+        "home",
+        "residence",
+        "dwelling",
+        "building",
+      ],
+      street: [
+        //
+        "road",
+        "avenue",
+        "lane",
+        "boulevard",
+      ],
+      city: [
+        //
+        "town",
+        "municipality",
+        "urban area",
+      ],
+      work: [
+        //
+        "job",
+        "employment",
+        "occupation",
+        "career",
+      ],
+      money: [
+        //
+        "cash",
+        "currency",
+        "funds",
+        "capital",
+      ],
+      time: [
+        //
+        "duration",
+        "period",
+        "moment",
+        "hour",
+      ],
+      big: [
+        //
+        "large",
+        "huge",
+        "enormous",
+        "massive",
+        "giant",
+      ],
+      small: [
+        //
+        "little",
+        "tiny",
+        "miniature",
+        "petite",
+      ],
+      fast: [
+        //
+        "quick",
+        "rapid",
+        "speedy",
+        "swift",
+      ],
+      slow: [
+        //
+        "sluggish",
+        "gradual",
+        "leisurely",
+      ],
+      good: [
+        //
+        "excellent",
+        "great",
+        "wonderful",
+        "fine",
+      ],
+      bad: [
+        //
+        "poor",
+        "terrible",
+        "awful",
+        "horrible",
+      ],
+      happy: [
+        //
+        "joyful",
+        "cheerful",
+        "glad",
+        "pleased",
+      ],
+      sad: [
+        //
+        "unhappy",
+        "depressed",
+        "melancholy",
+        "sorrowful",
+      ],
     };
 
     const normalized = this.normalize(word);

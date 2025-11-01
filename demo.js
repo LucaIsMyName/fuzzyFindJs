@@ -6,6 +6,7 @@ const DICTIONARIES = {
     name: 'German Healthcare',
     languages: ['german'],
     words: [
+      //
       'Krankenhaus', 'Pflegeheim', 'Ambulanz', 'Hausarzt', 'Zahnarzt',
       'Kinderarzt', 'Frauenarzt', 'Augenarzt', 'Hautarzt', 'HNO-Arzt',
       'Notaufnahme', 'Intensivstation', 'Operationssaal', 'Röntgenabteilung',
@@ -68,25 +69,25 @@ const DICTIONARIES = {
       'Doctor', 'Arzt', 'Médecin', 'Doctor',
       'Nurse', 'Krankenschwester', 'Infirmière', 'Enfermera',
       'Medicine', 'Medizin', 'Médicament', 'Medicina',
-      
+
       // Education
       'School', 'Schule', 'École', 'Escuela',
       'University', 'Universität', 'Université', 'Universidad',
       'Teacher', 'Lehrer', 'Professeur', 'Profesor',
       'Student', 'Student', 'Étudiant', 'Estudiante',
-      
+
       // Transportation
       'Car', 'Auto', 'Voiture', 'Coche',
       'Train', 'Zug', 'Train', 'Tren',
       'Bus', 'Bus', 'Bus', 'Autobús',
       'Airplane', 'Flugzeug', 'Avion', 'Avión',
-      
+
       // Food
       'Restaurant', 'Restaurant', 'Restaurant', 'Restaurante',
       'Bread', 'Brot', 'Pain', 'Pan',
       'Water', 'Wasser', 'Eau', 'Agua',
       'Coffee', 'Kaffee', 'Café', 'Café',
-      
+
       // Common
       'House', 'Haus', 'Maison', 'Casa',
       'Street', 'Straße', 'Rue', 'Calle',
@@ -106,7 +107,7 @@ function generateLargeDataset(count) {
   const prefixes = ['Super', 'Mega', 'Ultra', 'Hyper', 'Meta', 'Cyber', 'Digital', 'Smart', 'Quick', 'Fast'];
   const middles = ['Tech', 'Soft', 'Data', 'Cloud', 'Net', 'Web', 'App', 'Code', 'Dev', 'Sys'];
   const suffixes = ['Pro', 'Plus', 'Max', 'Prime', 'Elite', 'Advanced', 'Premium', 'Express', 'Hub', 'Lab'];
-  
+
   const words = [];
   for (let i = 0; i < count; i++) {
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
@@ -133,32 +134,32 @@ let currentConfig = {
 // Initialize
 function init() {
   console.log('🚀 Initializing FuzzyFindJS Demo Dashboard...');
-  
+
   // Set initial features based on performance mode
   updateFeaturesFromPerformance('balanced');
-  
+
   // Build initial index
   rebuildIndex();
-  
+
   // Set up event listeners
   const searchInput = document.getElementById('searchInput');
   searchInput.addEventListener('input', debounce(handleSearch, 150));
-  
+
   console.log('✅ Dashboard ready!');
 }
 
 // Rebuild index with current configuration
-window.rebuildIndex = function() {
+window.rebuildIndex = function () {
   const dict = DICTIONARIES[currentDictionary];
-  
+
   console.log('🔨 Building index...', {
     dictionary: dict.name,
     wordCount: dict.words.length,
     config: currentConfig
   });
-  
+
   const startTime = performance.now();
-  
+
   currentIndex = buildFuzzyIndex(dict.words, {
     config: {
       languages: dict.languages,
@@ -170,14 +171,14 @@ window.rebuildIndex = function() {
       minQueryLength: currentConfig.minQueryLength
     }
   });
-  
+
   const buildTime = (performance.now() - startTime).toFixed(2);
-  
+
   console.log(`✅ Index built in ${buildTime}ms`);
-  
+
   // Update dictionary info
   updateDictionaryInfo(dict, buildTime);
-  
+
   // Re-run search if there's a query
   const query = document.getElementById('searchInput').value;
   if (query) {
@@ -199,7 +200,7 @@ function updateDictionaryInfo(dict, buildTime) {
 // Handle search
 function handleSearch() {
   const query = document.getElementById('searchInput').value;
-  
+
   if (!currentIndex || query.length < currentConfig.minQueryLength) {
     if (query.length > 0 && query.length < currentConfig.minQueryLength) {
       showResults([], 0, `Query too short (min: ${currentConfig.minQueryLength} chars)`);
@@ -208,13 +209,13 @@ function handleSearch() {
     }
     return;
   }
-  
+
   const startTime = performance.now();
   const results = getSuggestions(currentIndex, query, currentConfig.maxResults);
   const searchTime = (performance.now() - startTime).toFixed(2);
-  
+
   showResults(results, searchTime, null);
-  
+
   if (document.getElementById('debugToggle').checked) {
     showDebugInfo(query, results, searchTime);
   }
@@ -225,10 +226,10 @@ function showResults(results, searchTime, errorMsg) {
   const container = document.getElementById('resultsContainer');
   const resultCount = document.getElementById('resultCount');
   const searchTimeEl = document.getElementById('searchTime');
-  
+
   resultCount.textContent = results.length;
   searchTimeEl.textContent = searchTime ? `(${searchTime}ms)` : '';
-  
+
   if (errorMsg) {
     container.innerHTML = `
       <div class="text-center py-8 text-gray-500">
@@ -237,7 +238,7 @@ function showResults(results, searchTime, errorMsg) {
     `;
     return;
   }
-  
+
   if (results.length === 0) {
     container.innerHTML = `
       <div class="text-center py-8 text-gray-500">
@@ -249,7 +250,7 @@ function showResults(results, searchTime, errorMsg) {
     `;
     return;
   }
-  
+
   container.innerHTML = results.map((result, index) => `
     <div class="result-item border border-gray-200 p-4 transition-all">
       <div class="flex items-start justify-between">
@@ -300,7 +301,7 @@ function showNoResults() {
 // Show debug information
 function showDebugInfo(query, results, searchTime) {
   const debugContent = document.getElementById('debugContent');
-  
+
   const debugData = {
     query: {
       original: query,
@@ -326,15 +327,15 @@ function showDebugInfo(query, results, searchTime) {
       synonyms: currentIndex.synonymMap.size
     }
   };
-  
+
   debugContent.textContent = JSON.stringify(debugData, null, 2);
 }
 
 // Toggle debug panel
-window.toggleDebug = function() {
+window.toggleDebug = function () {
   const debugInfo = document.getElementById('debugInfo');
   const isChecked = document.getElementById('debugToggle').checked;
-  
+
   if (isChecked) {
     debugInfo.classList.remove('hidden');
     handleSearch(); // Refresh to show debug info
@@ -344,84 +345,84 @@ window.toggleDebug = function() {
 };
 
 // Change dictionary
-window.changeDictionary = function() {
+window.changeDictionary = function () {
   const select = document.getElementById('dictionarySelect');
   currentDictionary = select.value;
-  
+
   // Update languages based on dictionary
   const dict = DICTIONARIES[currentDictionary];
   currentConfig.languages = dict.languages;
-  
+
   rebuildIndex();
 };
 
 // Update configuration
-window.updateConfig = function() {
+window.updateConfig = function () {
   // Get performance mode
   const performanceMode = document.querySelector('input[name="performance"]:checked').value;
   currentConfig.performance = performanceMode;
-  
+
   // Get selected features
   const featureCheckboxes = document.querySelectorAll('.feature-checkbox:checked');
   currentConfig.features = Array.from(featureCheckboxes).map(cb => cb.value);
-  
+
   // Get advanced settings
   currentConfig.maxResults = parseInt(document.getElementById('maxResults').value);
   currentConfig.fuzzyThreshold = parseFloat(document.getElementById('fuzzyThreshold').value);
   currentConfig.maxEditDistance = parseInt(document.getElementById('maxEditDistance').value);
   currentConfig.minQueryLength = parseInt(document.getElementById('minQueryLength').value);
-  
+
   rebuildIndex();
 };
 
 // Update features based on performance mode
 function updateFeaturesFromPerformance(mode) {
   const presetFeatures = PERFORMANCE_CONFIGS[mode].features || [];
-  
+
   // Update checkboxes
   document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
     checkbox.checked = presetFeatures.includes(checkbox.value);
   });
-  
+
   currentConfig.features = presetFeatures;
 }
 
 // Update slider values
-window.updateMaxResults = function(value) {
+window.updateMaxResults = function (value) {
   document.getElementById('maxResultsValue').textContent = value;
 };
 
-window.updateFuzzyThreshold = function(value) {
+window.updateFuzzyThreshold = function (value) {
   document.getElementById('fuzzyThresholdValue').textContent = value;
 };
 
-window.updateMaxEditDistance = function(value) {
+window.updateMaxEditDistance = function (value) {
   document.getElementById('maxEditDistanceValue').textContent = value;
 };
 
-window.updateMinQueryLength = function(value) {
+window.updateMinQueryLength = function (value) {
   document.getElementById('minQueryLengthValue').textContent = value;
 };
 
 // Reset configuration
-window.resetConfig = function() {
+window.resetConfig = function () {
   // Reset to balanced mode
   document.querySelector('input[name="performance"][value="balanced"]').checked = true;
-  
+
   // Reset sliders
   document.getElementById('maxResults').value = 5;
   document.getElementById('fuzzyThreshold').value = 0.8;
   document.getElementById('maxEditDistance').value = 2;
   document.getElementById('minQueryLength').value = 2;
-  
+
   updateMaxResults(5);
   updateFuzzyThreshold(0.8);
   updateMaxEditDistance(2);
   updateMinQueryLength(2);
-  
+
   // Update features
   updateFeaturesFromPerformance('balanced');
-  
+
   // Reset config
   currentConfig = {
     languages: DICTIONARIES[currentDictionary].languages,
@@ -432,12 +433,12 @@ window.resetConfig = function() {
     maxEditDistance: 2,
     minQueryLength: 2
   };
-  
+
   rebuildIndex();
 };
 
 // Clear search
-window.clearSearch = function() {
+window.clearSearch = function () {
   document.getElementById('searchInput').value = '';
   showNoResults();
   document.getElementById('debugInfo').classList.add('hidden');
