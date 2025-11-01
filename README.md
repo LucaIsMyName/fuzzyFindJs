@@ -595,9 +595,9 @@ MIT © [Your Name]
 
 ## 🔗 Links
 
-- [GitHub Repository](https://github.com/yourusername/fuzzyfindjs)
+- [GitHub Repository](https://github.com/LucaIsMyName/fuzzyfindjs)
 - [NPM Package](https://www.npmjs.com/package/fuzzyfindjs)
-- [Issue Tracker](https://github.com/yourusername/fuzzyfindjs/issues)
+- [Issue Tracker](https://github.com/LucaIsMyName/fuzzyfindjs/issues)
 
 ## 🙏 Acknowledgments
 

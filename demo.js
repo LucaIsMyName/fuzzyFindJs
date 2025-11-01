@@ -1,0 +1,467 @@
+import { buildFuzzyIndex, getSuggestions, PERFORMANCE_CONFIGS } from './src/index.js';
+
+// Mock Dictionaries
+const DICTIONARIES = {
+  'german-healthcare': {
+    name: 'German Healthcare',
+    languages: ['german'],
+    words: [
+      'Krankenhaus', 'Pflegeheim', 'Ambulanz', 'Hausarzt', 'Zahnarzt',
+      'Kinderarzt', 'Frauenarzt', 'Augenarzt', 'Hautarzt', 'HNO-Arzt',
+      'Notaufnahme', 'Intensivstation', 'Operationssaal', 'Röntgenabteilung',
+      'Apotheke', 'Sanitätshaus', 'Physiotherapie', 'Ergotherapie',
+      'Krankenwagen', 'Rettungsdienst', 'Notarzt', 'Sanitäter',
+      'Krankenschwester', 'Pfleger', 'Hebamme', 'Arzthelfer',
+      'Medikament', 'Rezept', 'Diagnose', 'Behandlung', 'Therapie',
+      'Untersuchung', 'Blutabnahme', 'Impfung', 'Operation',
+      'Rehabilitation', 'Vorsorge', 'Nachsorge', 'Sprechstunde',
+      'Wartezeit', 'Terminvereinbarung', 'Überweisung', 'Krankschreibung'
+    ]
+  },
+  'german-cities': {
+    name: 'German Cities',
+    languages: ['german'],
+    words: [
+      'Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt',
+      'Stuttgart', 'Düsseldorf', 'Dortmund', 'Essen', 'Leipzig',
+      'Bremen', 'Dresden', 'Hannover', 'Nürnberg', 'Duisburg',
+      'Bochum', 'Wuppertal', 'Bielefeld', 'Bonn', 'Münster',
+      'Karlsruhe', 'Mannheim', 'Augsburg', 'Wiesbaden', 'Gelsenkirchen',
+      'Mönchengladbach', 'Braunschweig', 'Chemnitz', 'Kiel', 'Aachen',
+      'Halle', 'Magdeburg', 'Freiburg', 'Krefeld', 'Lübeck',
+      'Oberhausen', 'Erfurt', 'Mainz', 'Rostock', 'Kassel'
+    ]
+  },
+  'english-tech': {
+    name: 'English Tech Terms',
+    languages: ['english'],
+    words: [
+      'Algorithm', 'Application', 'Architecture', 'Authentication', 'Authorization',
+      'Backend', 'Bandwidth', 'Binary', 'Blockchain', 'Bootstrap',
+      'Browser', 'Cache', 'Callback', 'Certificate', 'Cipher',
+      'Client', 'Cloud', 'Cluster', 'Compiler', 'Component',
+      'Compression', 'Configuration', 'Container', 'Cookie', 'Cryptocurrency',
+      'Database', 'Debugging', 'Deployment', 'Development', 'DevOps',
+      'Docker', 'Documentation', 'Domain', 'Encryption', 'Endpoint',
+      'Framework', 'Frontend', 'Function', 'Gateway', 'GitHub',
+      'GraphQL', 'Hashing', 'Hosting', 'HTML', 'HTTP',
+      'Infrastructure', 'Integration', 'Interface', 'JavaScript', 'JSON',
+      'Kubernetes', 'Library', 'Linux', 'Microservice', 'Middleware',
+      'Migration', 'Module', 'MongoDB', 'Monitoring', 'Network',
+      'Node.js', 'OAuth', 'Object', 'Operating System', 'Optimization',
+      'Package', 'Parameter', 'Performance', 'Plugin', 'PostgreSQL',
+      'Protocol', 'Python', 'Query', 'React', 'Redis',
+      'Refactoring', 'Repository', 'REST', 'Router', 'Scalability',
+      'Security', 'Server', 'Service', 'Socket', 'SQL',
+      'SSL', 'Stack', 'Storage', 'Syntax', 'System',
+      'Testing', 'Token', 'TypeScript', 'Ubuntu', 'UI/UX',
+      'Validation', 'Variable', 'Version Control', 'Virtual Machine', 'Vue.js',
+      'Webpack', 'WebSocket', 'Widget', 'Workflow', 'XML'
+    ]
+  },
+  'multi-language': {
+    name: 'Multi-Language Mix',
+    languages: ['german', 'english', 'french', 'spanish'],
+    words: [
+      // Healthcare
+      'Hospital', 'Krankenhaus', 'Hôpital', 'Hospital',
+      'Doctor', 'Arzt', 'Médecin', 'Doctor',
+      'Nurse', 'Krankenschwester', 'Infirmière', 'Enfermera',
+      'Medicine', 'Medizin', 'Médicament', 'Medicina',
+      
+      // Education
+      'School', 'Schule', 'École', 'Escuela',
+      'University', 'Universität', 'Université', 'Universidad',
+      'Teacher', 'Lehrer', 'Professeur', 'Profesor',
+      'Student', 'Student', 'Étudiant', 'Estudiante',
+      
+      // Transportation
+      'Car', 'Auto', 'Voiture', 'Coche',
+      'Train', 'Zug', 'Train', 'Tren',
+      'Bus', 'Bus', 'Bus', 'Autobús',
+      'Airplane', 'Flugzeug', 'Avion', 'Avión',
+      
+      // Food
+      'Restaurant', 'Restaurant', 'Restaurant', 'Restaurante',
+      'Bread', 'Brot', 'Pain', 'Pan',
+      'Water', 'Wasser', 'Eau', 'Agua',
+      'Coffee', 'Kaffee', 'Café', 'Café',
+      
+      // Common
+      'House', 'Haus', 'Maison', 'Casa',
+      'Street', 'Straße', 'Rue', 'Calle',
+      'City', 'Stadt', 'Ville', 'Ciudad',
+      'Country', 'Land', 'Pays', 'País'
+    ]
+  },
+  'large-dataset': {
+    name: 'Large Dataset (1000 items)',
+    languages: ['english'],
+    words: generateLargeDataset(1000)
+  }
+};
+
+// Generate large dataset for performance testing
+function generateLargeDataset(count) {
+  const prefixes = ['Super', 'Mega', 'Ultra', 'Hyper', 'Meta', 'Cyber', 'Digital', 'Smart', 'Quick', 'Fast'];
+  const middles = ['Tech', 'Soft', 'Data', 'Cloud', 'Net', 'Web', 'App', 'Code', 'Dev', 'Sys'];
+  const suffixes = ['Pro', 'Plus', 'Max', 'Prime', 'Elite', 'Advanced', 'Premium', 'Express', 'Hub', 'Lab'];
+  
+  const words = [];
+  for (let i = 0; i < count; i++) {
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const middle = middles[Math.floor(Math.random() * middles.length)];
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+    words.push(`${prefix}${middle}${suffix}${i}`);
+  }
+  return words;
+}
+
+// Global state
+let currentIndex = null;
+let currentDictionary = 'german-healthcare';
+let currentConfig = {
+  languages: ['german'],
+  performance: 'balanced',
+  features: [],
+  maxResults: 5,
+  fuzzyThreshold: 0.8,
+  maxEditDistance: 2,
+  minQueryLength: 2
+};
+
+// Initialize
+function init() {
+  console.log('🚀 Initializing FuzzyFindJS Demo Dashboard...');
+  
+  // Set initial features based on performance mode
+  updateFeaturesFromPerformance('balanced');
+  
+  // Build initial index
+  rebuildIndex();
+  
+  // Set up event listeners
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', debounce(handleSearch, 150));
+  
+  console.log('✅ Dashboard ready!');
+}
+
+// Rebuild index with current configuration
+window.rebuildIndex = function() {
+  const dict = DICTIONARIES[currentDictionary];
+  
+  console.log('🔨 Building index...', {
+    dictionary: dict.name,
+    wordCount: dict.words.length,
+    config: currentConfig
+  });
+  
+  const startTime = performance.now();
+  
+  currentIndex = buildFuzzyIndex(dict.words, {
+    config: {
+      languages: dict.languages,
+      performance: currentConfig.performance,
+      features: currentConfig.features,
+      maxResults: currentConfig.maxResults,
+      fuzzyThreshold: currentConfig.fuzzyThreshold,
+      maxEditDistance: currentConfig.maxEditDistance,
+      minQueryLength: currentConfig.minQueryLength
+    }
+  });
+  
+  const buildTime = (performance.now() - startTime).toFixed(2);
+  
+  console.log(`✅ Index built in ${buildTime}ms`);
+  
+  // Update dictionary info
+  updateDictionaryInfo(dict, buildTime);
+  
+  // Re-run search if there's a query
+  const query = document.getElementById('searchInput').value;
+  if (query) {
+    handleSearch();
+  }
+};
+
+// Update dictionary info display
+function updateDictionaryInfo(dict, buildTime) {
+  const info = document.getElementById('dictionaryInfo');
+  info.innerHTML = `
+    <div><strong>${dict.name}</strong></div>
+    <div class="mt-1">Words: ${dict.words.length}</div>
+    <div>Languages: ${dict.languages.join(', ')}</div>
+    <div>Build time: ${buildTime}ms</div>
+  `;
+}
+
+// Handle search
+function handleSearch() {
+  const query = document.getElementById('searchInput').value;
+  
+  if (!currentIndex || query.length < currentConfig.minQueryLength) {
+    if (query.length > 0 && query.length < currentConfig.minQueryLength) {
+      showResults([], 0, `Query too short (min: ${currentConfig.minQueryLength} chars)`);
+    } else {
+      showNoResults();
+    }
+    return;
+  }
+  
+  const startTime = performance.now();
+  const results = getSuggestions(currentIndex, query, currentConfig.maxResults);
+  const searchTime = (performance.now() - startTime).toFixed(2);
+  
+  showResults(results, searchTime, null);
+  
+  if (document.getElementById('debugToggle').checked) {
+    showDebugInfo(query, results, searchTime);
+  }
+}
+
+// Show results
+function showResults(results, searchTime, errorMsg) {
+  const container = document.getElementById('resultsContainer');
+  const resultCount = document.getElementById('resultCount');
+  const searchTimeEl = document.getElementById('searchTime');
+  
+  resultCount.textContent = results.length;
+  searchTimeEl.textContent = searchTime ? `(${searchTime}ms)` : '';
+  
+  if (errorMsg) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-500">
+        <p>${errorMsg}</p>
+      </div>
+    `;
+    return;
+  }
+  
+  if (results.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-500">
+        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p>No results found</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = results.map((result, index) => `
+    <div class="result-item border border-gray-200 p-4 transition-all">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-semibold text-gray-900">${escapeHtml(result.display)}</span>
+            ${result.isSynonym ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1">Synonym</span>' : ''}
+          </div>
+          <div class="mt-1 text-sm text-gray-600">
+            ${result.language ? `Language: ${result.language}` : ''}
+          </div>
+        </div>
+        <div class="text-right ml-4">
+          <div class="text-2xl font-bold text-blue-600">${(result.score * 100).toFixed(0)}%</div>
+          <div class="text-xs text-gray-500">confidence</div>
+        </div>
+      </div>
+      
+      <!-- Score Bar -->
+      <div class="mt-3 bg-gray-200 h-2 overflow-hidden">
+        <div class="bg-blue-600 h-full transition-all" style="width: ${result.score * 100}%"></div>
+      </div>
+      
+      ${result._debug_matchType ? `
+        <div class="mt-2 text-xs text-gray-500">
+          Match type: <span class="font-mono bg-gray-100 px-1">${result._debug_matchType}</span>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+// Show no results state
+function showNoResults() {
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = `
+    <div class="text-center py-12 text-gray-400">
+      <svg class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+      <p>Start typing to see results...</p>
+    </div>
+  `;
+  document.getElementById('resultCount').textContent = '0';
+  document.getElementById('searchTime').textContent = '';
+}
+
+// Show debug information
+function showDebugInfo(query, results, searchTime) {
+  const debugContent = document.getElementById('debugContent');
+  
+  const debugData = {
+    query: {
+      original: query,
+      length: query.length,
+      normalized: query.toLowerCase()
+    },
+    config: currentConfig,
+    results: {
+      count: results.length,
+      searchTime: `${searchTime}ms`,
+      items: results.map(r => ({
+        display: r.display,
+        score: r.score,
+        matchType: r._debug_matchType,
+        language: r.language
+      }))
+    },
+    index: {
+      baseWords: currentIndex.base.length,
+      variants: currentIndex.variantToBase.size,
+      phonetic: currentIndex.phoneticToBase.size,
+      ngrams: currentIndex.ngramIndex.size,
+      synonyms: currentIndex.synonymMap.size
+    }
+  };
+  
+  debugContent.textContent = JSON.stringify(debugData, null, 2);
+}
+
+// Toggle debug panel
+window.toggleDebug = function() {
+  const debugInfo = document.getElementById('debugInfo');
+  const isChecked = document.getElementById('debugToggle').checked;
+  
+  if (isChecked) {
+    debugInfo.classList.remove('hidden');
+    handleSearch(); // Refresh to show debug info
+  } else {
+    debugInfo.classList.add('hidden');
+  }
+};
+
+// Change dictionary
+window.changeDictionary = function() {
+  const select = document.getElementById('dictionarySelect');
+  currentDictionary = select.value;
+  
+  // Update languages based on dictionary
+  const dict = DICTIONARIES[currentDictionary];
+  currentConfig.languages = dict.languages;
+  
+  rebuildIndex();
+};
+
+// Update configuration
+window.updateConfig = function() {
+  // Get performance mode
+  const performanceMode = document.querySelector('input[name="performance"]:checked').value;
+  currentConfig.performance = performanceMode;
+  
+  // Get selected features
+  const featureCheckboxes = document.querySelectorAll('.feature-checkbox:checked');
+  currentConfig.features = Array.from(featureCheckboxes).map(cb => cb.value);
+  
+  // Get advanced settings
+  currentConfig.maxResults = parseInt(document.getElementById('maxResults').value);
+  currentConfig.fuzzyThreshold = parseFloat(document.getElementById('fuzzyThreshold').value);
+  currentConfig.maxEditDistance = parseInt(document.getElementById('maxEditDistance').value);
+  currentConfig.minQueryLength = parseInt(document.getElementById('minQueryLength').value);
+  
+  rebuildIndex();
+};
+
+// Update features based on performance mode
+function updateFeaturesFromPerformance(mode) {
+  const presetFeatures = PERFORMANCE_CONFIGS[mode].features || [];
+  
+  // Update checkboxes
+  document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
+    checkbox.checked = presetFeatures.includes(checkbox.value);
+  });
+  
+  currentConfig.features = presetFeatures;
+}
+
+// Update slider values
+window.updateMaxResults = function(value) {
+  document.getElementById('maxResultsValue').textContent = value;
+};
+
+window.updateFuzzyThreshold = function(value) {
+  document.getElementById('fuzzyThresholdValue').textContent = value;
+};
+
+window.updateMaxEditDistance = function(value) {
+  document.getElementById('maxEditDistanceValue').textContent = value;
+};
+
+window.updateMinQueryLength = function(value) {
+  document.getElementById('minQueryLengthValue').textContent = value;
+};
+
+// Reset configuration
+window.resetConfig = function() {
+  // Reset to balanced mode
+  document.querySelector('input[name="performance"][value="balanced"]').checked = true;
+  
+  // Reset sliders
+  document.getElementById('maxResults').value = 5;
+  document.getElementById('fuzzyThreshold').value = 0.8;
+  document.getElementById('maxEditDistance').value = 2;
+  document.getElementById('minQueryLength').value = 2;
+  
+  updateMaxResults(5);
+  updateFuzzyThreshold(0.8);
+  updateMaxEditDistance(2);
+  updateMinQueryLength(2);
+  
+  // Update features
+  updateFeaturesFromPerformance('balanced');
+  
+  // Reset config
+  currentConfig = {
+    languages: DICTIONARIES[currentDictionary].languages,
+    performance: 'balanced',
+    features: PERFORMANCE_CONFIGS.balanced.features || [],
+    maxResults: 5,
+    fuzzyThreshold: 0.8,
+    maxEditDistance: 2,
+    minQueryLength: 2
+  };
+  
+  rebuildIndex();
+};
+
+// Clear search
+window.clearSearch = function() {
+  document.getElementById('searchInput').value = '';
+  showNoResults();
+  document.getElementById('debugInfo').classList.add('hidden');
+  document.getElementById('debugToggle').checked = false;
+};
+
+// Utility functions
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Initialize on load
+init();

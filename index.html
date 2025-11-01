@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FuzzyFindJS - Interactive Demo Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .result-item:hover {
+      background-color: #f3f4f6;
+    }
+    .config-section {
+      border-left: 3px solid #3b82f6;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .feature-checkbox:checked {
+      background-color: #3b82f6;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">🔍 FuzzyFindJS</h1>
+            <p class="text-sm text-gray-600 mt-1">Interactive Demo Dashboard</p>
+          </div>
+          <div class="text-right">
+            <div class="text-sm text-gray-500">Version 1.0.0</div>
+            <div class="text-xs text-gray-400">Multi-language Fuzzy Search</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column: Search & Results -->
+        <div class="lg:col-span-2 space-y-6">
+          
+          <!-- Search Section -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Search</h2>
+            
+            <div class="space-y-4">
+              <!-- Search Input -->
+              <div>
+                <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-2">
+                  Enter your search query
+                </label>
+                <input
+                  type="text"
+                  id="searchInput"
+                  class="search-input w-full px-4 py-3 border-2 border-gray-300 text-lg transition-all"
+                  placeholder="Try: krankenh, arzt, hospit..."
+                  autocomplete="off"
+                />
+              </div>
+
+              <!-- Search Stats -->
+              <div class="flex items-center justify-between text-sm">
+                <div class="text-gray-600">
+                  <span id="resultCount" class="font-semibold text-gray-900">0</span> results found
+                  <span id="searchTime" class="text-gray-500 ml-2"></span>
+                </div>
+                <button
+                  id="clearBtn"
+                  class="text-blue-600 hover:text-blue-800 font-medium"
+                  onclick="clearSearch()"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Section -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Results</h2>
+            
+            <div id="resultsContainer" class="space-y-2">
+              <div class="text-center py-12 text-gray-400">
+                <svg class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <p>Start typing to see results...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Debug Info Section -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold text-gray-900">Debug Information</h2>
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" id="debugToggle" class="mr-2" onchange="toggleDebug()">
+                <span class="text-sm text-gray-600">Show Debug</span>
+              </label>
+            </div>
+            
+            <div id="debugInfo" class="hidden">
+              <div class="bg-gray-50 border border-gray-200 p-4 font-mono text-xs overflow-x-auto">
+                <pre id="debugContent" class="text-gray-700"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Configuration -->
+        <div class="space-y-6">
+          
+          <!-- Dictionary Selection -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Dictionary</h2>
+            
+            <div class="space-y-3">
+              <div>
+                <label for="dictionarySelect" class="block text-sm font-medium text-gray-700 mb-2">
+                  Select Dictionary
+                </label>
+                <select
+                  id="dictionarySelect"
+                  class="w-full px-3 py-2 border-2 border-gray-300 bg-white text-sm focus:border-blue-500 focus:outline-none transition-all"
+                  onchange="changeDictionary()"
+                >
+                  <option value="german-healthcare">German Healthcare</option>
+                  <option value="german-cities">German Cities</option>
+                  <option value="english-tech">English Tech Terms</option>
+                  <option value="multi-language">Multi-Language</option>
+                  <option value="large-dataset">Large Dataset (1000 items)</option>
+                </select>
+              </div>
+
+              <div class="text-xs text-gray-500 bg-gray-50 p-3 border border-gray-200">
+                <div class="font-semibold mb-1">Current Dictionary:</div>
+                <div id="dictionaryInfo">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Performance Mode -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Performance</h2>
+            
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Mode</label>
+                <div class="space-y-2">
+                  <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                    <input type="radio" name="performance" value="fast" class="mr-3" onchange="updateConfig()">
+                    <div>
+                      <div class="font-medium text-sm">Fast</div>
+                      <div class="text-xs text-gray-500">Minimal features, quick</div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                    <input type="radio" name="performance" value="balanced" checked class="mr-3" onchange="updateConfig()">
+                    <div>
+                      <div class="font-medium text-sm">Balanced</div>
+                      <div class="text-xs text-gray-500">Good mix (default)</div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                    <input type="radio" name="performance" value="comprehensive" class="mr-3" onchange="updateConfig()">
+                    <div>
+                      <div class="font-medium text-sm">Comprehensive</div>
+                      <div class="text-xs text-gray-500">All features, best accuracy</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Features -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Features</h2>
+            
+            <div class="space-y-2">
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="phonetic" onchange="updateConfig()">
+                <span class="text-sm">Phonetic Matching</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="compound" onchange="updateConfig()">
+                <span class="text-sm">Compound Words</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="synonyms" onchange="updateConfig()">
+                <span class="text-sm">Synonyms</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="keyboard-neighbors" onchange="updateConfig()">
+                <span class="text-sm">Keyboard Neighbors</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="partial-words" onchange="updateConfig()">
+                <span class="text-sm">Partial Words</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="missing-letters" onchange="updateConfig()">
+                <span class="text-sm">Missing Letters</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="extra-letters" onchange="updateConfig()">
+                <span class="text-sm">Extra Letters</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
+                <input type="checkbox" class="feature-checkbox mr-3 w-4 h-4" value="transpositions" onchange="updateConfig()">
+                <span class="text-sm">Transpositions</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Advanced Settings -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Advanced Settings</h2>
+            
+            <div class="space-y-4">
+              <div>
+                <label for="maxResults" class="block text-sm font-medium text-gray-700 mb-2">
+                  Max Results: <span id="maxResultsValue" class="text-blue-600">5</span>
+                </label>
+                <input
+                  type="range"
+                  id="maxResults"
+                  min="1"
+                  max="20"
+                  value="5"
+                  class="w-full"
+                  oninput="updateMaxResults(this.value)"
+                  onchange="updateConfig()"
+                />
+              </div>
+
+              <div>
+                <label for="fuzzyThreshold" class="block text-sm font-medium text-gray-700 mb-2">
+                  Fuzzy Threshold: <span id="fuzzyThresholdValue" class="text-blue-600">0.8</span>
+                </label>
+                <input
+                  type="range"
+                  id="fuzzyThreshold"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value="0.8"
+                  class="w-full"
+                  oninput="updateFuzzyThreshold(this.value)"
+                  onchange="updateConfig()"
+                />
+              </div>
+
+              <div>
+                <label for="maxEditDistance" class="block text-sm font-medium text-gray-700 mb-2">
+                  Max Edit Distance: <span id="maxEditDistanceValue" class="text-blue-600">2</span>
+                </label>
+                <input
+                  type="range"
+                  id="maxEditDistance"
+                  min="1"
+                  max="5"
+                  value="2"
+                  class="w-full"
+                  oninput="updateMaxEditDistance(this.value)"
+                  onchange="updateConfig()"
+                />
+              </div>
+
+              <div>
+                <label for="minQueryLength" class="block text-sm font-medium text-gray-700 mb-2">
+                  Min Query Length: <span id="minQueryLengthValue" class="text-blue-600">2</span>
+                </label>
+                <input
+                  type="range"
+                  id="minQueryLength"
+                  min="1"
+                  max="5"
+                  value="2"
+                  class="w-full"
+                  oninput="updateMinQueryLength(this.value)"
+                  onchange="updateConfig()"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="bg-white shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Actions</h2>
+            
+            <div class="space-y-2">
+              <button
+                onclick="rebuildIndex()"
+                class="btn-primary w-full px-4 py-2 font-medium text-sm"
+              >
+                Rebuild Index
+              </button>
+              <button
+                onclick="resetConfig()"
+                class="btn-secondary w-full px-4 py-2 font-medium text-sm"
+              >
+                Reset to Defaults
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/demo.js"></script>
+</body>
+</html>
