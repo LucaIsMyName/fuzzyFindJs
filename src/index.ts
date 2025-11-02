@@ -21,6 +21,9 @@ export { calculateHighlights, formatHighlightedHTML } from "./core/highlighting.
 // Cache utilities (for advanced users)
 export { SearchCache, LRUCache } from "./core/cache.js";
 
+// Serialization utilities (save/load indices)
+export { serializeIndex, deserializeIndex, saveIndexToLocalStorage, loadIndexFromLocalStorage, getSerializedSize } from "./core/serialization.js";
+
 // Configuration
 export { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 
