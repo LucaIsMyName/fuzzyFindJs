@@ -12,6 +12,8 @@
 import type { InvertedIndex, DocumentMetadata, PostingList, FuzzyConfig, LanguageProcessor, SearchMatch } from "./types.js";
 import { generateNgrams, calculateLevenshteinDistance, calculateDamerauLevenshteinDistance } from "../algorithms/levenshtein.js";
 import { Trie } from "./trie.js";
+import { calculateBM25Score, normalizeBM25Score, DEFAULT_BM25_CONFIG, type DocumentStats, type CorpusStats } from "../algorithms/bm25.js";
+import { BloomFilter } from "../algorithms/bloom-filter.js";
 
 /**
  * Build inverted index from documents
@@ -122,6 +124,45 @@ export function buildInvertedIndex(words: string[], languageProcessors: Language
   invertedIndex.totalDocs = docId;
   invertedIndex.avgDocLength = totalLength / Math.max(1, docId);
 
+  // Build BM25 statistics if enabled
+  if (config.useBM25) {
+    const documentFrequencies = new Map<string, number>();
+    const documentLengths = new Map<number, number>();
+
+    // Calculate document frequencies (how many docs contain each term)
+    for (const [term, posting] of invertedIndex.termToPostings.entries()) {
+      documentFrequencies.set(term, posting.docIds.length);
+    }
+
+    // Store document lengths
+    documents.forEach((doc) => {
+      documentLengths.set(doc.id, doc.normalized.length);
+    });
+
+    invertedIndex.bm25Stats = {
+      documentFrequencies,
+      documentLengths,
+    };
+  }
+
+  // Build Bloom Filter if enabled or auto-enable for large datasets
+  const shouldUseBloomFilter = config.useBloomFilter || words.length >= 10000;
+  
+  if (shouldUseBloomFilter) {
+    const falsePositiveRate = config.bloomFilterFalsePositiveRate || 0.01;
+    const bloomFilter = new BloomFilter({
+      expectedElements: invertedIndex.termToPostings.size,
+      falsePositiveRate,
+    });
+    
+    // Add all terms to bloom filter
+    for (const term of invertedIndex.termToPostings.keys()) {
+      bloomFilter.add(term);
+    }
+    
+    invertedIndex.bloomFilter = bloomFilter;
+  }
+
   return { invertedIndex, documents };
 }
 
@@ -186,6 +227,11 @@ function addToPostingList(postings: Map<string, PostingList>, term: string, docI
  * Find exact matches in inverted index
  */
 function findExactMatchesInverted(query: string, invertedIndex: InvertedIndex, documents: DocumentMetadata[], matches: Map<number, SearchMatch>, language: string): void {
+  // BLOOM FILTER: Fast negative lookup
+  if (invertedIndex.bloomFilter && !invertedIndex.bloomFilter.mightContain(query)) {
+    return; // Definitely not in index, skip expensive lookup
+  }
+  
   const posting = invertedIndex.termToPostings.get(query);
   if (!posting) return;
 
@@ -200,6 +246,7 @@ function findExactMatchesInverted(query: string, invertedIndex: InvertedIndex, d
         matchType: "exact",
         editDistance: 0,
         language,
+        docId,
       });
     }
   });
@@ -226,6 +273,7 @@ function findPrefixMatchesInverted(query: string, invertedIndex: InvertedIndex, 
               normalized: term,
               matchType: "prefix",
               language,
+              docId,
             });
           }
         });
@@ -245,6 +293,7 @@ function findPrefixMatchesInverted(query: string, invertedIndex: InvertedIndex, 
               normalized: term,
               matchType: "prefix",
               language,
+              docId,
             });
           }
         });
@@ -274,6 +323,7 @@ function findPhoneticMatchesInverted(query: string, processor: LanguageProcessor
         matchType: "phonetic",
         phoneticCode,
         language: processor.language,
+        docId,
       });
     }
   });
@@ -296,6 +346,7 @@ function findSynonymMatchesInverted(query: string, invertedIndex: InvertedIndex,
         normalized: query,
         matchType: "synonym",
         language: "synonym",
+        docId,
       });
     }
   });
@@ -329,6 +380,7 @@ function findNgramMatchesInverted(query: string, invertedIndex: InvertedIndex, d
         normalized: query,
         matchType: "ngram",
         language,
+        docId,
       });
     }
   });
@@ -389,9 +441,73 @@ function findFuzzyMatchesInverted(query: string, invertedIndex: InvertedIndex, d
             matchType: "fuzzy",
             editDistance: distance,
             language: processor.language,
+            docId,
           });
         }
       });
     }
   }
+}
+
+/**
+ * Calculate BM25 scores for search matches
+ * Enhances relevance ranking with statistical scoring
+ */
+export function calculateBM25Scores(
+  matches: SearchMatch[],
+  queryTerms: string[],
+  invertedIndex: InvertedIndex,
+  documents: DocumentMetadata[],
+  config: FuzzyConfig
+): SearchMatch[] {
+  if (!config.useBM25 || !invertedIndex.bm25Stats) {
+    return matches;
+  }
+
+  const bm25Config = {
+    ...DEFAULT_BM25_CONFIG,
+    ...config.bm25Config,
+  };
+
+  // Build corpus stats from inverted index
+  const corpusStats: CorpusStats = {
+    totalDocs: invertedIndex.totalDocs,
+    avgDocLength: invertedIndex.avgDocLength,
+    documentFrequencies: invertedIndex.bm25Stats.documentFrequencies,
+  };
+
+  // Calculate BM25 score for each match
+  return matches.map((match) => {
+    if (match.docId === undefined) {
+      return match;
+    }
+
+    const doc = documents[match.docId];
+    if (!doc) {
+      return match;
+    }
+
+    // Build document stats
+    const termFrequencies = new Map<string, number>();
+    const normalizedTerms = doc.normalized.toLowerCase().split(/\s+/);
+    
+    for (const term of normalizedTerms) {
+      termFrequencies.set(term, (termFrequencies.get(term) || 0) + 1);
+    }
+
+    const docStats: DocumentStats = {
+      docId: doc.id,
+      length: normalizedTerms.length,
+      termFrequencies,
+    };
+
+    // Calculate BM25 score
+    const bm25Score = calculateBM25Score(queryTerms, docStats, corpusStats, bm25Config);
+    const normalizedBM25 = normalizeBM25Score(bm25Score);
+
+    return {
+      ...match,
+      bm25Score: normalizedBM25,
+    };
+  });
 }

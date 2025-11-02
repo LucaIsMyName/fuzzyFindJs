@@ -2,6 +2,8 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const levenshtein = require("../algorithms/levenshtein.cjs");
 const trie = require("./trie.cjs");
+const bm25 = require("../algorithms/bm25.cjs");
+const bloomFilter = require("../algorithms/bloom-filter.cjs");
 function buildInvertedIndex(words, languageProcessors, config, featureSet) {
   const documents = [];
   const invertedIndex = {
@@ -79,6 +81,32 @@ function buildInvertedIndex(words, languageProcessors, config, featureSet) {
   }
   invertedIndex.totalDocs = docId;
   invertedIndex.avgDocLength = totalLength / Math.max(1, docId);
+  if (config.useBM25) {
+    const documentFrequencies = /* @__PURE__ */ new Map();
+    const documentLengths = /* @__PURE__ */ new Map();
+    for (const [term, posting] of invertedIndex.termToPostings.entries()) {
+      documentFrequencies.set(term, posting.docIds.length);
+    }
+    documents.forEach((doc) => {
+      documentLengths.set(doc.id, doc.normalized.length);
+    });
+    invertedIndex.bm25Stats = {
+      documentFrequencies,
+      documentLengths
+    };
+  }
+  const shouldUseBloomFilter = config.useBloomFilter || words.length >= 1e4;
+  if (shouldUseBloomFilter) {
+    const falsePositiveRate = config.bloomFilterFalsePositiveRate || 0.01;
+    const bloomFilter$1 = new bloomFilter.BloomFilter({
+      expectedElements: invertedIndex.termToPostings.size,
+      falsePositiveRate
+    });
+    for (const term of invertedIndex.termToPostings.keys()) {
+      bloomFilter$1.add(term);
+    }
+    invertedIndex.bloomFilter = bloomFilter$1;
+  }
   return { invertedIndex, documents };
 }
 function searchInvertedIndex(invertedIndex, documents, query, processors, config) {
@@ -112,6 +140,9 @@ function addToPostingList(postings, term, docId) {
   }
 }
 function findExactMatchesInverted(query, invertedIndex, documents, matches, language) {
+  if (invertedIndex.bloomFilter && !invertedIndex.bloomFilter.mightContain(query)) {
+    return;
+  }
   const posting = invertedIndex.termToPostings.get(query);
   if (!posting) return;
   posting.docIds.forEach((docId) => {
@@ -123,7 +154,8 @@ function findExactMatchesInverted(query, invertedIndex, documents, matches, lang
         normalized: query,
         matchType: "exact",
         editDistance: 0,
-        language
+        language,
+        docId
       });
     }
   });
@@ -141,7 +173,8 @@ function findPrefixMatchesInverted(query, invertedIndex, documents, matches, lan
               word: doc.word,
               normalized: term,
               matchType: "prefix",
-              language
+              language,
+              docId
             });
           }
         });
@@ -158,7 +191,8 @@ function findPrefixMatchesInverted(query, invertedIndex, documents, matches, lan
               word: doc.word,
               normalized: term,
               matchType: "prefix",
-              language
+              language,
+              docId
             });
           }
         });
@@ -180,7 +214,8 @@ function findPhoneticMatchesInverted(query, processor, invertedIndex, documents,
         normalized: query,
         matchType: "phonetic",
         phoneticCode,
-        language: processor.language
+        language: processor.language,
+        docId
       });
     }
   });
@@ -196,7 +231,8 @@ function findSynonymMatchesInverted(query, invertedIndex, documents, matches) {
         word: doc.word,
         normalized: query,
         matchType: "synonym",
-        language: "synonym"
+        language: "synonym",
+        docId
       });
     }
   });
@@ -219,7 +255,8 @@ function findNgramMatchesInverted(query, invertedIndex, documents, matches, lang
         word: doc.word,
         normalized: query,
         matchType: "ngram",
-        language
+        language,
+        docId
       });
     }
   });
@@ -255,13 +292,54 @@ function findFuzzyMatchesInverted(query, invertedIndex, documents, matches, proc
             normalized: term,
             matchType: "fuzzy",
             editDistance: distance,
-            language: processor.language
+            language: processor.language,
+            docId
           });
         }
       });
     }
   }
 }
+function calculateBM25Scores(matches, queryTerms, invertedIndex, documents, config) {
+  if (!config.useBM25 || !invertedIndex.bm25Stats) {
+    return matches;
+  }
+  const bm25Config = {
+    ...bm25.DEFAULT_BM25_CONFIG,
+    ...config.bm25Config
+  };
+  const corpusStats = {
+    totalDocs: invertedIndex.totalDocs,
+    avgDocLength: invertedIndex.avgDocLength,
+    documentFrequencies: invertedIndex.bm25Stats.documentFrequencies
+  };
+  return matches.map((match) => {
+    if (match.docId === void 0) {
+      return match;
+    }
+    const doc = documents[match.docId];
+    if (!doc) {
+      return match;
+    }
+    const termFrequencies = /* @__PURE__ */ new Map();
+    const normalizedTerms = doc.normalized.toLowerCase().split(/\s+/);
+    for (const term of normalizedTerms) {
+      termFrequencies.set(term, (termFrequencies.get(term) || 0) + 1);
+    }
+    const docStats = {
+      docId: doc.id,
+      length: normalizedTerms.length,
+      termFrequencies
+    };
+    const bm25Score = bm25.calculateBM25Score(queryTerms, docStats, corpusStats, bm25Config);
+    const normalizedBM25 = bm25.normalizeBM25Score(bm25Score);
+    return {
+      ...match,
+      bm25Score: normalizedBM25
+    };
+  });
+}
 exports.buildInvertedIndex = buildInvertedIndex;
+exports.calculateBM25Scores = calculateBM25Scores;
 exports.searchInvertedIndex = searchInvertedIndex;
 //# sourceMappingURL=inverted-index.cjs.map

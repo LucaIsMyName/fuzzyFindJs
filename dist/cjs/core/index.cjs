@@ -87,7 +87,7 @@ function buildFuzzyIndex(words = [], options = {}) {
       options.onProgress(processed, words.length);
     }
   }
-  const shouldUseInvertedIndex = options.useInvertedIndex || config$1.useInvertedIndex || words.length >= 1e4;
+  const shouldUseInvertedIndex = options.useInvertedIndex || config$1.useInvertedIndex || config$1.useBM25 || config$1.useBloomFilter || words.length >= 1e4;
   if (shouldUseInvertedIndex) {
     const { invertedIndex: invertedIndex$1, documents } = invertedIndex.buildInvertedIndex(words, languageProcessors, config$1, featureSet);
     index$12.invertedIndex = invertedIndex$1;
@@ -433,6 +433,11 @@ function findFuzzyMatches(query, index2, matches, processor, config2) {
 }
 function createSuggestionResult(match, originalQuery, threshold, index2, options) {
   let score = calculateMatchScore(match, originalQuery);
+  if (match.bm25Score !== void 0 && index2.config.useBM25) {
+    const bm25Weight = index2.config.bm25Weight || 0.6;
+    const fuzzyWeight = 1 - bm25Weight;
+    score = bm25Weight * match.bm25Score + fuzzyWeight * score;
+  }
   if (match.fieldWeight) {
     score = Math.min(1, score * match.fieldWeight);
   }
@@ -507,7 +512,11 @@ function getSuggestionsInverted(index2, query, limit, threshold, processors, opt
   if (!index2.invertedIndex || !index2.documents) {
     throw new Error("Inverted index not available");
   }
-  const matches = invertedIndex.searchInvertedIndex(index2.invertedIndex, index2.documents, query, processors, index2.config);
+  let matches = invertedIndex.searchInvertedIndex(index2.invertedIndex, index2.documents, query, processors, index2.config);
+  if (index2.config.useBM25) {
+    const queryTerms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 0);
+    matches = invertedIndex.calculateBM25Scores(matches, queryTerms, index2.invertedIndex, index2.documents, index2.config);
+  }
   const results = matches.map((match) => createSuggestionResult(match, query, threshold, index2, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
   return results;
 }

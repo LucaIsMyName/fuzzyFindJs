@@ -23,6 +23,10 @@ export { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.
 export type { FuzzyIndex, FuzzyConfig, SuggestionResult, SearchMatch, MatchType, FuzzyFeature, LanguageProcessor, BuildIndexOptions, SearchOptions, DebugInfo, SuggestionResultWithDebug } from "./core/types.js";
 export { LanguageRegistry, GermanProcessor, EnglishProcessor, SpanishProcessor, FrenchProcessor, BaseLanguageProcessor } from "./languages/index.js";
 export { calculateLevenshteinDistance, calculateDamerauLevenshteinDistance, calculateNgramSimilarity, distanceToSimilarity, areStringsSimilar } from "./algorithms/levenshtein.js";
+export { calculateBM25Score, calculateIDF, normalizeBM25Score, combineScores, buildCorpusStats, DEFAULT_BM25_CONFIG } from "./algorithms/bm25.js";
+export type { BM25Config, DocumentStats, CorpusStats } from "./algorithms/bm25.js";
+export { BloomFilter, createBloomFilter } from "./algorithms/bloom-filter.js";
+export type { BloomFilterConfig } from "./algorithms/bloom-filter.js";
 /**
  * Quick start function with sensible defaults
  * Perfect for getting started quickly

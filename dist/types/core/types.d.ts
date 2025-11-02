@@ -91,6 +91,23 @@ export interface FuzzyConfig {
     enableStopWords?: boolean;
     /** Enable word boundary matching for more precise results (default: false) */
     wordBoundaries?: boolean;
+    /** Enable BM25 scoring for better relevance ranking (default: false) */
+    useBM25?: boolean;
+    /** BM25 configuration parameters */
+    bm25Config?: {
+        /** Term frequency saturation (default: 1.2) */
+        k1?: number;
+        /** Length normalization (default: 0.75) */
+        b?: number;
+        /** Minimum IDF value (default: 0.1) */
+        minIDF?: number;
+    };
+    /** BM25 weight in hybrid scoring (default: 0.6) */
+    bm25Weight?: number;
+    /** Enable Bloom Filter for fast negative lookups (default: false, auto-enabled for large datasets) */
+    useBloomFilter?: boolean;
+    /** Bloom filter false positive rate (default: 0.01 = 1%) */
+    bloomFilterFalsePositiveRate?: number;
 }
 export type FuzzyFeature = "phonetic" | "compound" | "synonyms" | "keyboard-neighbors" | "partial-words" | "missing-letters" | "extra-letters" | "transpositions";
 export interface LanguageProcessor {
@@ -130,6 +147,10 @@ export interface SearchMatch {
     field?: string;
     /** Field weight multiplier */
     fieldWeight?: number;
+    /** BM25 relevance score (if BM25 enabled) */
+    bm25Score?: number;
+    /** Document ID (for inverted index lookups) */
+    docId?: number;
 }
 export type MatchType = "exact" | "prefix" | "substring" | "fuzzy" | "phonetic" | "synonym" | "compound" | "ngram";
 export interface BuildIndexOptions {
@@ -240,5 +261,14 @@ export interface InvertedIndex {
     totalDocs: number;
     /** Average document length (for BM25 scoring) */
     avgDocLength: number;
+    /** BM25 corpus statistics (document frequencies per term) */
+    bm25Stats?: {
+        /** Document frequency for each term */
+        documentFrequencies: Map<string, number>;
+        /** Document lengths for BM25 calculation */
+        documentLengths: Map<number, number>;
+    };
+    /** Bloom filter for fast negative lookups */
+    bloomFilter?: any;
 }
 //# sourceMappingURL=types.d.ts.map

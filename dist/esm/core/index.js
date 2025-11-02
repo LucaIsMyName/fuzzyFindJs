@@ -1,7 +1,7 @@
 import { mergeConfig, validateConfig } from "./config.js";
 import { LanguageRegistry } from "../languages/index.js";
 import { calculateDamerauLevenshteinDistance, calculateLevenshteinDistance, calculateNgramSimilarity } from "../algorithms/levenshtein.js";
-import { buildInvertedIndex, searchInvertedIndex } from "./inverted-index.js";
+import { buildInvertedIndex, searchInvertedIndex, calculateBM25Scores } from "./inverted-index.js";
 import { calculateHighlights } from "./highlighting.js";
 import { SearchCache } from "./cache.js";
 import { removeAccents } from "../utils/accent-normalization.js";
@@ -85,7 +85,7 @@ function buildFuzzyIndex(words = [], options = {}) {
       options.onProgress(processed, words.length);
     }
   }
-  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || words.length >= 1e4;
+  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || config.useBM25 || config.useBloomFilter || words.length >= 1e4;
   if (shouldUseInvertedIndex) {
     const { invertedIndex, documents } = buildInvertedIndex(words, languageProcessors, config, featureSet);
     index.invertedIndex = invertedIndex;
@@ -431,6 +431,11 @@ function findFuzzyMatches(query, index, matches, processor, config) {
 }
 function createSuggestionResult(match, originalQuery, threshold, index, options) {
   let score = calculateMatchScore(match, originalQuery);
+  if (match.bm25Score !== void 0 && index.config.useBM25) {
+    const bm25Weight = index.config.bm25Weight || 0.6;
+    const fuzzyWeight = 1 - bm25Weight;
+    score = bm25Weight * match.bm25Score + fuzzyWeight * score;
+  }
   if (match.fieldWeight) {
     score = Math.min(1, score * match.fieldWeight);
   }
@@ -505,7 +510,11 @@ function getSuggestionsInverted(index, query, limit, threshold, processors, opti
   if (!index.invertedIndex || !index.documents) {
     throw new Error("Inverted index not available");
   }
-  const matches = searchInvertedIndex(index.invertedIndex, index.documents, query, processors, index.config);
+  let matches = searchInvertedIndex(index.invertedIndex, index.documents, query, processors, index.config);
+  if (index.config.useBM25) {
+    const queryTerms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 0);
+    matches = calculateBM25Scores(matches, queryTerms, index.invertedIndex, index.documents, index.config);
+  }
   const results = matches.map((match) => createSuggestionResult(match, query, threshold, index, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
   return results;
 }

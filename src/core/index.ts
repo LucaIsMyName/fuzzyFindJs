@@ -27,6 +27,7 @@ import {
   //
   buildInvertedIndex,
   searchInvertedIndex,
+  calculateBM25Scores,
 } from "./inverted-index.js";
 import {
   //
@@ -161,7 +162,8 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
   }
 
   // INVERTED INDEX: Build if enabled or auto-enable for large datasets
-  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || words.length >= 10000; // Auto-enable for 10k+ words
+  // Also force inverted index if BM25 or Bloom Filter is enabled
+  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || config.useBM25 || config.useBloomFilter || words.length >= 10000;
 
   if (shouldUseInvertedIndex) {
     const { invertedIndex, documents } = buildInvertedIndex(words, languageProcessors, config, featureSet);
@@ -659,6 +661,13 @@ function findFuzzyMatches(query: string, index: FuzzyIndex, matches: Map<string,
 function createSuggestionResult(match: SearchMatch, originalQuery: string, threshold: number, index: FuzzyIndex, options?: SearchOptions): SuggestionResult | null {
   let score = calculateMatchScore(match, originalQuery);
 
+  // Combine with BM25 score if available
+  if (match.bm25Score !== undefined && index.config.useBM25) {
+    const bm25Weight = index.config.bm25Weight || 0.6;
+    const fuzzyWeight = 1 - bm25Weight;
+    score = bm25Weight * match.bm25Score + fuzzyWeight * score;
+  }
+
   // Apply field weight if present
   if (match.fieldWeight) {
     score = Math.min(1.0, score * match.fieldWeight);
@@ -779,7 +788,13 @@ function getSuggestionsInverted(
   }
 
   // Use inverted index search
-  const matches = searchInvertedIndex(index.invertedIndex, index.documents, query, processors, index.config);
+  let matches = searchInvertedIndex(index.invertedIndex, index.documents, query, processors, index.config);
+
+  // Calculate BM25 scores if enabled
+  if (index.config.useBM25) {
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    matches = calculateBM25Scores(matches, queryTerms, index.invertedIndex, index.documents, index.config);
+  }
 
   // Convert to suggestion results (same as classic approach)
   const results = matches

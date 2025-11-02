@@ -22,4 +22,9 @@ export declare function buildInvertedIndex(words: string[], languageProcessors: 
  * Much faster than hash-based approach for large datasets
  */
 export declare function searchInvertedIndex(invertedIndex: InvertedIndex, documents: DocumentMetadata[], query: string, processors: LanguageProcessor[], config: FuzzyConfig): SearchMatch[];
+/**
+ * Calculate BM25 scores for search matches
+ * Enhances relevance ranking with statistical scoring
+ */
+export declare function calculateBM25Scores(matches: SearchMatch[], queryTerms: string[], invertedIndex: InvertedIndex, documents: DocumentMetadata[], config: FuzzyConfig): SearchMatch[];
 //# sourceMappingURL=inverted-index.d.ts.map

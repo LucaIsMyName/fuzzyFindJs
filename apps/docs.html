@@ -1,15 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FuzzyFindJS - Documentation</title>
+    <!-- Google Fonts: Geist and Geist Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
     <style>
         /* Smooth scrolling */
         html {
             scroll-behavior: smooth;
+        }
+
+        /* Geist fonts */
+        body {
+            font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        code,
+        pre {
+            font-family: 'Geist Mono', 'Courier New', monospace !important;
         }
 
         /* Sidebar styling */
@@ -18,15 +40,46 @@
             top: 0;
             height: 100vh;
             overflow-y: auto;
+            width: 320px;
+        }
+
+        @media (min-width: 1280px) {
+            .sidebar {
+                width: 380px;
+            }
         }
 
         /* Content styling */
         .content {
             max-width: 800px;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* Prevent content overflow on mobile */
+        .content pre {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .content table {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .content img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .content * {
+            max-width: 100%;
+            word-wrap: break-word;
         }
 
         .content h1 {
-            font-size: 2.5rem;
+            font-size: clamp(1.5rem, 10vw, 3rem);
             font-weight: 700;
             margin-top: 2rem;
             margin-bottom: 1rem;
@@ -34,7 +87,7 @@
         }
 
         .content h2 {
-            font-size: 2rem;
+            font-size: clamp(1.25rem, 10vw, 2.5rem);
             font-weight: 700;
             margin-top: 3rem;
             margin-bottom: 1rem;
@@ -44,7 +97,7 @@
         }
 
         .content h3 {
-            font-size: 1.5rem;
+            font-size: clamp(1.125rem, 8vw, 1.5rem);
             font-weight: 600;
             margin-top: 2rem;
             margin-bottom: 0.75rem;
@@ -52,7 +105,7 @@
         }
 
         .content h4 {
-            font-size: 1.25rem;
+            font-size: clamp(1rem, 6vw, 1.25rem);
             font-weight: 600;
             margin-top: 1.5rem;
             margin-bottom: 0.5rem;
@@ -60,7 +113,7 @@
         }
 
         .content h5 {
-            font-size: 1.125rem;
+            font-size: clamp(1rem, 4vw, 1.25rem);
             font-weight: 600;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
@@ -68,7 +121,7 @@
         }
 
         .content h6 {
-            font-size: 1rem;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
             font-weight: 600;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
@@ -81,7 +134,8 @@
             color: #374151;
         }
 
-        .content ul, .content ol {
+        .content ul,
+        .content ol {
             margin-bottom: 1rem;
             padding-left: 1.5rem;
             color: #374151;
@@ -92,22 +146,27 @@
         }
 
         .content pre {
-            background-color: #1f2937;
+            background-color: #0d1117;
             color: #f3f4f6;
             padding: 1rem;
             overflow-x: auto;
             margin-bottom: 1rem;
-            font-family: 'Courier New', monospace;
+            border-radius: 0.5rem;
             font-size: 0.875rem;
             line-height: 1.5;
         }
 
-        .content code {
+        .content pre code {
+            font-family: 'Geist Mono', monospace !important;
+        }
+
+        :is(p, ul, ol, li, h1, h2, h3, h4, h5, h6, pre) code {
             background-color: #f3f4f6;
             color: #1f2937;
             padding: 0.125rem 0.25rem;
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
+            border-radius: 0.25rem;
+            font-family: 'Geist Mono', monospace;
+            /* font-size: 0.875rem; */
         }
 
         .content pre code {
@@ -139,7 +198,8 @@
             margin-bottom: 1rem;
         }
 
-        .content th, .content td {
+        .content th,
+        .content td {
             border: 1px solid #e5e7eb;
             padding: 0.5rem;
             text-align: left;
@@ -169,6 +229,7 @@
             color: #2563eb;
             border-left-color: #2563eb;
             background-color: #eff6ff;
+            font-weight: 600;
         }
 
         .nav-h2 {
@@ -179,18 +240,30 @@
         .nav-h3 {
             font-size: 0.8125rem;
             padding-left: 1.5rem;
+            font-weight: 500;
         }
 
         .nav-h4 {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             padding-left: 2rem;
             color: #9ca3af;
+            font-weight: 400;
         }
 
-        .nav-h5, .nav-h6 {
+        .nav-h5,
+        .nav-h6 {
             font-size: 0.75rem;
             padding-left: 2.5rem;
             color: #9ca3af;
+            font-weight: 400;
+        }
+
+        /* Scroll offset for sub-headings */
+        h3,
+        h4,
+        h5,
+        h6 {
+            scroll-margin-top: 2rem;
         }
 
         /* Mobile menu */
@@ -225,9 +298,11 @@
         }
     </style>
 </head>
+
 <body class="bg-white">
     <!-- Mobile Menu Button -->
-    <button id="mobile-menu-btn" class="md:hidden fixed top-4 left-4 z-50 bg-gray-900 text-white p-2 border border-gray-700">
+    <button id="mobile-menu-btn"
+        class="md:hidden fixed top-4 left-4 z-50 bg-gray-900 text-white p-2 border border-gray-700">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
@@ -238,7 +313,7 @@
 
     <div class="flex">
         <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 p-6">
+        <aside id="sidebar" class="sidebar bg-white border-r border-gray-200 p-6">
             <div class="mb-8">
                 <h2 class="text-xl font-bold text-gray-900 mb-2">FuzzyFindJS</h2>
                 <p class="text-sm text-gray-600">Documentation</p>
@@ -249,10 +324,16 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 p-8 md:p-12">
+        <main class="flex-1 p-4 md:p-8 lg:p-12 min-w-0">
+            <!-- Chapter indicator -->
+            <div id="chapter-indicator" class="mb-6 text-sm text-gray-500 hidden">
+                <span id="chapter-progress"></span>
+            </div>
+
             <div class="content" id="content">
                 <div class="text-center py-12">
-                    <div class="inline-block animate-spin h-8 w-8 border-4 border-gray-900 border-t-transparent mb-4"></div>
+                    <div class="inline-block animate-spin h-8 w-8 border-4 border-gray-900 border-t-transparent mb-4">
+                    </div>
                     <p class="text-gray-600">Loading documentation...</p>
                 </div>
             </div>
@@ -280,22 +361,21 @@
             try {
                 const response = await fetch('../README.md');
                 const markdown = await response.text();
-                
+
                 // Parse markdown to HTML
                 const html = marked.parse(markdown);
-                
+
                 // Render content
                 document.getElementById('content').innerHTML = html;
-                
+
+                // Apply syntax highlighting
+                document.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+
                 // Generate navigation
                 generateNavigation();
-                
-                // Setup scroll spy
-                setupScrollSpy();
-                
-                // Handle anchor links
-                setupAnchorLinks();
-                
+
             } catch (error) {
                 document.getElementById('content').innerHTML = `
                     <div class="bg-red-50 border border-red-200 p-6">
@@ -306,70 +386,281 @@
             }
         }
 
+        // Global state
+        let chapters = [];
+        let currentChapterIndex = 0;
+
         function generateNavigation() {
             const content = document.getElementById('content');
             const navMenu = document.getElementById('nav-menu');
-            
-            // Find all headings (h2-h6)
-            const headings = content.querySelectorAll('h2, h3, h4, h5, h6');
-            
+
+            // Find all H2 headings (chapters)
+            const h2Headings = content.querySelectorAll('h2');
+
+            // Build chapters array with sub-headings
+            chapters = [];
+            h2Headings.forEach((h2, index) => {
+                const chapterContent = [];
+                const subHeadings = [];
+                let currentElement = h2.nextElementSibling;
+
+                // Collect all content until next H2
+                while (currentElement && currentElement.tagName !== 'H2') {
+                    chapterContent.push(currentElement);
+
+                    // Track sub-headings (H3-H6)
+                    if (['H3', 'H4', 'H5', 'H6'].includes(currentElement.tagName)) {
+                        subHeadings.push({
+                            element: currentElement,
+                            level: currentElement.tagName.toLowerCase(),
+                            text: currentElement.textContent,
+                            id: `section-${index}-sub-${subHeadings.length}`
+                        });
+                    }
+
+                    currentElement = currentElement.nextElementSibling;
+                }
+
+                chapters.push({
+                    title: h2.textContent,
+                    heading: h2,
+                    content: chapterContent,
+                    subHeadings: subHeadings,
+                    index: index
+                });
+            });
+
+            // Create navigation menu (initially just chapters)
+            updateNavigationMenu();
+
+            // Show chapter from URL or first chapter
+            const urlChapter = getChapterFromURL();
+            showChapter(urlChapter);
+        }
+
+        function updateNavigationMenu() {
+            const navMenu = document.getElementById('nav-menu');
             let navHTML = '';
-            headings.forEach((heading, index) => {
-                const level = heading.tagName.toLowerCase();
-                const text = heading.textContent;
-                const id = `section-${index}`;
-                
-                // Add ID to heading for anchor links
-                heading.id = id;
-                
-                // Create nav link
+
+            chapters.forEach((chapter, index) => {
+                // Add separator before each chapter (except first)
+                if (index > 0 && index !== currentChapterIndex && currentChapterIndex !== index - 1) {
+                    navHTML += '<div class="h-px bg-gray-200 my-2"></div>';
+                }
+
+                // Chapter link
                 navHTML += `
-                    <a href="#${id}" class="nav-link nav-${level}" data-target="${id}">
-                        ${text}
+                    <a href="#" class="nav-link nav-h2" data-chapter="${index}">
+                        ${chapter.title}
                     </a>
                 `;
+
+                // Sub-chapters (only show if this is the active chapter)
+                if (index === currentChapterIndex && chapter.subHeadings.length > 0) {
+                    navHTML += '<div class="pl-3 border-l-2 border-blue-100 ml-2 my-1">';
+                    chapter.subHeadings.forEach(sub => {
+                        navHTML += `
+                            <a href="#${sub.id}" class="nav-link nav-${sub.level}" data-subheading="${sub.id}">
+                                ${sub.text}
+                            </a>
+                        `;
+                    });
+                    navHTML += '</div>';
+                }
             });
-            
+
             navMenu.innerHTML = navHTML;
-        }
 
-        function setupScrollSpy() {
-            const navLinks = document.querySelectorAll('.nav-link');
-            const headings = document.querySelectorAll('[id^="section-"]');
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        // Remove active class from all links
-                        navLinks.forEach(link => link.classList.remove('active'));
-                        
-                        // Add active class to current link
-                        const activeLink = document.querySelector(`[data-target="${entry.target.id}"]`);
-                        if (activeLink) {
-                            activeLink.classList.add('active');
-                        }
-                    }
+            // Add click handlers for chapters
+            document.querySelectorAll('[data-chapter]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const chapterIndex = parseInt(link.dataset.chapter);
+                    showChapter(chapterIndex);
+
+                    // Close mobile menu
+                    sidebar.classList.remove('open');
+                    mobileOverlay.classList.remove('open');
                 });
-            }, {
-                rootMargin: '-20% 0px -80% 0px'
             });
-            
-            headings.forEach(heading => observer.observe(heading));
-        }
 
-        function setupAnchorLinks() {
-            // Close mobile menu when clicking nav links
-            const navLinks = document.querySelectorAll('.nav-link');
-            navLinks.forEach(link => {
-                link.addEventListener('click', () => {
+            // Add click handlers for sub-headings
+            document.querySelectorAll('[data-subheading]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.dataset.subheading;
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+
+                    // Close mobile menu
                     sidebar.classList.remove('open');
                     mobileOverlay.classList.remove('open');
                 });
             });
         }
 
+        function showChapter(index) {
+            if (index < 0 || index >= chapters.length) return;
+
+            currentChapterIndex = index;
+            const chapter = chapters[index];
+            const content = document.getElementById('content');
+
+            // Clear content
+            content.innerHTML = '';
+
+            // Add chapter heading
+            const h2 = chapter.heading.cloneNode(true);
+            content.appendChild(h2);
+
+            // Add chapter content and assign IDs to sub-headings
+            chapter.content.forEach((element, idx) => {
+                const clonedElement = element.cloneNode(true);
+
+                // Assign ID to sub-headings for navigation
+                if (['H3', 'H4', 'H5', 'H6'].includes(clonedElement.tagName)) {
+                    const subHeading = chapter.subHeadings.find(sub =>
+                        sub.element.textContent === clonedElement.textContent
+                    );
+                    if (subHeading) {
+                        clonedElement.id = subHeading.id;
+                    }
+                }
+
+                content.appendChild(clonedElement);
+            });
+
+            // Re-apply syntax highlighting
+            content.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            // Add navigation buttons
+            addNavigationButtons();
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+
+            // Update navigation menu to show/hide sub-chapters
+            updateNavigationMenu();
+
+            // Update active state in sidebar
+            document.querySelectorAll('[data-chapter]').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-chapter="${index}"]`)?.classList.add('active');
+
+            // Update chapter indicator
+            const indicator = document.getElementById('chapter-indicator');
+            const progress = document.getElementById('chapter-progress');
+            indicator.classList.remove('hidden');
+            progress.textContent = `Chapter ${index + 1} of ${chapters.length}`;
+            
+            // Update URL
+            updateURL(index);
+        }
+
+        function addNavigationButtons() {
+            const content = document.getElementById('content');
+            const navDiv = document.createElement('div');
+            navDiv.className = 'flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-12 pt-8 border-t border-gray-200';
+            
+            // Previous button
+            if (currentChapterIndex > 0) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors';
+                const prevTitle = chapters[currentChapterIndex - 1].title;
+                const truncatedPrev = prevTitle.length > 30 ? prevTitle.substring(0, 30) + '...' : prevTitle;
+                prevBtn.innerHTML = `
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <span class="truncate"><span class="hidden sm:inline">Previous: </span>${truncatedPrev}</span>
+                `;
+                prevBtn.onclick = () => showChapter(currentChapterIndex - 1);
+                navDiv.appendChild(prevBtn);
+            } else {
+                navDiv.appendChild(document.createElement('div'));
+            }
+            
+            // Next button
+            if (currentChapterIndex < chapters.length - 1) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors';
+                const nextTitle = chapters[currentChapterIndex + 1].title;
+                const truncatedNext = nextTitle.length > 30 ? nextTitle.substring(0, 30) + '...' : nextTitle;
+                nextBtn.innerHTML = `
+                    <span class="truncate"><span class="hidden sm:inline">Next: </span>${truncatedNext}</span>
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                `;
+                nextBtn.onclick = () => showChapter(currentChapterIndex + 1);
+                navDiv.appendChild(nextBtn);
+            } else {
+                navDiv.appendChild(document.createElement('div'));
+            }
+            
+            content.appendChild(navDiv);
+        }
+
+
+        // URL management
+        function updateURL(chapterIndex) {
+            const chapter = chapters[chapterIndex];
+            if (chapter) {
+                const slug = chapter.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '');
+                const newURL = `${window.location.pathname}#${slug}`;
+                window.history.pushState({ chapter: chapterIndex }, '', newURL);
+            }
+        }
+
+        function getChapterFromURL() {
+            const hash = window.location.hash.slice(1); // Remove #
+            if (!hash) return 0;
+            
+            // Find chapter by slug
+            const chapterIndex = chapters.findIndex(chapter => {
+                const slug = chapter.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '');
+                return slug === hash;
+            });
+            
+            return chapterIndex >= 0 ? chapterIndex : 0;
+        }
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', (e) => {
+            if (e.state && typeof e.state.chapter === 'number') {
+                showChapter(e.state.chapter);
+            } else {
+                const chapterIndex = getChapterFromURL();
+                showChapter(chapterIndex);
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            // Left arrow or 'p' for previous
+            if ((e.key === 'ArrowLeft' || e.key === 'p') && currentChapterIndex > 0) {
+                showChapter(currentChapterIndex - 1);
+            }
+            // Right arrow or 'n' for next
+            else if ((e.key === 'ArrowRight' || e.key === 'n') && currentChapterIndex < chapters.length - 1) {
+                showChapter(currentChapterIndex + 1);
+            }
+        });
+
         // Load documentation on page load
         loadDocumentation();
     </script>
 </body>
+
 </html>

@@ -48,6 +48,10 @@ export { LanguageRegistry, GermanProcessor, EnglishProcessor, SpanishProcessor, 
 
 // Algorithms (for advanced users)
 export { calculateLevenshteinDistance, calculateDamerauLevenshteinDistance, calculateNgramSimilarity, distanceToSimilarity, areStringsSimilar } from "./algorithms/levenshtein.js";
+export { calculateBM25Score, calculateIDF, normalizeBM25Score, combineScores, buildCorpusStats, DEFAULT_BM25_CONFIG } from "./algorithms/bm25.js";
+export type { BM25Config, DocumentStats, CorpusStats } from "./algorithms/bm25.js";
+export { BloomFilter, createBloomFilter } from "./algorithms/bloom-filter.js";
+export type { BloomFilterConfig } from "./algorithms/bloom-filter.js";
 
 /**
  * Quick start function with sensible defaults
