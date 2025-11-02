@@ -1,7 +1,32 @@
-import type { FuzzyIndex, FuzzyConfig, SuggestionResult, SearchMatch, BuildIndexOptions, SearchOptions, LanguageProcessor } from "./types.js";
-import { mergeConfig, validateConfig } from "./config.js";
-import { LanguageRegistry } from "../languages/index.js";
-import { calculateLevenshteinDistance, calculateNgramSimilarity } from "../algorithms/levenshtein.js";
+import type {
+  //
+  FuzzyIndex,
+  FuzzyConfig,
+  SuggestionResult,
+  SearchMatch,
+  BuildIndexOptions,
+  SearchOptions,
+  LanguageProcessor,
+} from "./types.js";
+import {
+  //
+  mergeConfig,
+  validateConfig,
+} from "./config.js";
+import {
+  //
+  LanguageRegistry,
+} from "../languages/index.js";
+import {
+  //
+  calculateLevenshteinDistance,
+  calculateNgramSimilarity,
+} from "../algorithms/levenshtein.js";
+import {
+  //
+  buildInvertedIndex,
+  searchInvertedIndex,
+} from "./inverted-index.js";
 
 /**
  * Build a fuzzy search index from a dictionary of words
@@ -55,6 +80,15 @@ export function buildFuzzyIndex(words: string[] = [], options: BuildIndexOptions
     if (options.onProgress) {
       options.onProgress(processed, words.length);
     }
+  }
+
+  // INVERTED INDEX: Build if enabled or auto-enable for large datasets
+  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || words.length >= 10000; // Auto-enable for 10k+ words
+
+  if (shouldUseInvertedIndex) {
+    const { invertedIndex, documents } = buildInvertedIndex(words, languageProcessors, config, featureSet);
+    index.invertedIndex = invertedIndex;
+    index.documents = documents;
   }
 
   return index;
@@ -135,6 +169,7 @@ function addToVariantMap(map: Map<string, Set<string>>, key: string, value: stri
 
 /**
  * Get fuzzy search suggestions from an index
+ * Auto-detects whether to use inverted index or classic hash-based approach
  */
 export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: number, options: SearchOptions = {}): SuggestionResult[] {
   const config = index.config;
@@ -145,8 +180,6 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
     return [];
   }
 
-  const matches = new Map<string, SearchMatch>();
-
   // Get active language processors
   const activeLanguages = options.languages || config.languages;
   const processors = activeLanguages.map((lang) => index.languageProcessors.get(lang)).filter((p): p is LanguageProcessor => p !== undefined);
@@ -155,20 +188,26 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
     return [];
   }
 
+  // AUTO-DETECTION: Use inverted index if available
+  if (index.invertedIndex && index.documents) {
+    return getSuggestionsInverted(index, query, limit, threshold, processors);
+  }
+
+  // CLASSIC: Use hash-based approach (existing implementation)
+  const matches = new Map<string, SearchMatch>();
+
   // Process query with each language processor
   for (const processor of processors) {
     const normalizedQuery = processor.normalize(query.trim());
-    
+
     // Find matches using different strategies
     findExactMatches(normalizedQuery, index, matches, processor.language);
     findPrefixMatches(normalizedQuery, index, matches, processor.language);
     findPhoneticMatches(normalizedQuery, processor, index, matches);
     findSynonymMatches(normalizedQuery, index, matches);
     findNgramMatches(normalizedQuery, index, matches, processor.language, config.ngramSize);
-    
-    if (config.features.includes('missing-letters') || 
-        config.features.includes('extra-letters') ||
-        config.features.includes('transpositions')) {
+
+    if (config.features.includes("missing-letters") || config.features.includes("extra-letters") || config.features.includes("transpositions")) {
       findFuzzyMatches(normalizedQuery, index, matches, processor, config);
     }
   }
@@ -202,7 +241,7 @@ function findExactMatches(query: string, index: FuzzyIndex, matches: Map<string,
       }
     });
   }
-  
+
   // Also check if the query exactly matches any base word (case-insensitive)
   const queryLower = query.toLowerCase();
   for (const baseWord of index.base) {
@@ -343,13 +382,9 @@ function findFuzzyMatches(query: string, index: FuzzyIndex, matches: Map<string,
 /**
  * Create a suggestion result from a search match
  */
-function createSuggestionResult(
-  match: SearchMatch,
-  originalQuery: string,
-  threshold: number
-): SuggestionResult | null {
+function createSuggestionResult(match: SearchMatch, originalQuery: string, threshold: number): SuggestionResult | null {
   const score = calculateMatchScore(match, originalQuery);
-  
+
   if (score < threshold) {
     return null;
   }
@@ -357,11 +392,11 @@ function createSuggestionResult(
   return {
     display: match.word,
     baseWord: match.word,
-    isSynonym: match.matchType === 'synonym',
+    isSynonym: match.matchType === "synonym",
     score,
     language: match.language,
     // @ts-ignore - temporary debug property
-    _debug_matchType: match.matchType
+    _debug_matchType: match.matchType,
   };
 }
 
@@ -406,7 +441,7 @@ function calculateMatchScore(match: SearchMatch, query: string): number {
 
   // Boost score for shorter words (more likely to be what user wants)
   // But don't boost exact matches - they should stay at 1.0
-  if (wordLen <= queryLen + 2 && match.matchType !== 'exact') {
+  if (wordLen <= queryLen + 2 && match.matchType !== "exact") {
     score += 0.1;
   }
 
@@ -424,4 +459,26 @@ function generateNgrams(str: string, n: number): string[] {
     ngrams.push(str.slice(i, i + n));
   }
   return ngrams;
+}
+
+/**
+ * Get suggestions using inverted index (for large datasets)
+ * This is a wrapper that converts inverted index results to the same format
+ */
+function getSuggestionsInverted(index: FuzzyIndex, query: string, limit: number, threshold: number, processors: LanguageProcessor[]): SuggestionResult[] {
+  if (!index.invertedIndex || !index.documents) {
+    throw new Error("Inverted index not available");
+  }
+
+  // Use inverted index search
+  const matches = searchInvertedIndex(index.invertedIndex, index.documents, query, processors, index.config);
+
+  // Convert to suggestion results (same as classic approach)
+  const results = matches
+    .map((match) => createSuggestionResult(match, query, threshold))
+    .filter((result): result is SuggestionResult => result !== null)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  return results;
 }

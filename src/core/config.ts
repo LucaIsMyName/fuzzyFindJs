@@ -1,4 +1,8 @@
-import type { FuzzyConfig, FuzzyFeature } from "./types.js";
+import type {
+  //
+  FuzzyConfig,
+  FuzzyFeature,
+} from "./types.js";
 
 /**
  * Default configuration for FuzzyFindJS
