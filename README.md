@@ -1526,6 +1526,115 @@ matchesWildcard('category', 'cat*');     // → true
 matchesWildcard('application', 'app*');  // → true
 ```
 
+### 14. Data Indexing Utilities (NEW!)
+
+Easily extract searchable words from unstructured data sources like HTML, JSON, or text dumps:
+
+```typescript
+import { dataToIndex, createFuzzySearch } from 'fuzzyfindjs';
+
+// ✅ Simple text
+const text = "The quick brown fox jumps over the lazy dog.";
+const words = dataToIndex(text, {
+  minLength: 3,
+  stopWords: ['the', 'a', 'an']
+});
+// → ['quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog']
+
+// ✅ HTML content (strips tags automatically)
+const html = `
+  <html>
+    <body>
+      <h1>Welcome to Our Store</h1>
+      <p>We sell <strong>amazing</strong> products!</p>
+    </body>
+  </html>
+`;
+const htmlWords = dataToIndex(html, { format: 'html' });
+// → ['welcome', 'our', 'store', 'we', 'sell', 'amazing', 'products']
+
+// ✅ JSON data (extracts string values only)
+const products = [
+  { name: 'iPhone 15', category: 'Electronics', price: 999 },
+  { name: 'MacBook Pro', category: 'Computers', price: 2499 }
+];
+const jsonWords = dataToIndex(JSON.stringify(products), { format: 'json' });
+// → ['iphone', '15', 'electronics', 'macbook', 'pro', 'computers']
+
+// ✅ Base64 encoded content
+const base64 = btoa("Hello World");
+const base64Words = dataToIndex(base64, { format: 'base64' });
+// → ['hello', 'world']
+
+// ✅ Direct integration with fuzzy search
+const htmlContent = "<h1>Coffee</h1><p>Kaffee is German for coffee</p>";
+const dictionary = dataToIndex(htmlContent, { format: 'html' });
+const search = createFuzzySearch(dictionary);
+
+search.search('kaffee');
+// → [{ display: 'kaffee', score: 1.0, ... }]
+```
+
+**Options:**
+```typescript
+interface DataToIndexOptions {
+  minLength?: number;        // Minimum word length (default: 2)
+  splitWords?: boolean;      // Split into words (default: true)
+  stopWords?: string[];      // Remove stop words (default: false)
+  overlap?: number;          // Chunk overlap (default: 0)
+  chunkSize?: number;        // Chunk size (default: 0 = no chunking)
+  splitOn?: 'word' | 'sentence' | 'paragraph';  // Split strategy
+  format?: 'string' | 'html' | 'json' | 'base64' | 'url';
+  removeNumbers?: boolean;   // Remove numeric values (default: false)
+  caseSensitive?: boolean;   // Preserve case (default: false)
+}
+```
+
+**Async URL Fetching:**
+```typescript
+import { dataToIndexAsync } from 'fuzzyfindjs';
+
+// Fetch and index a webpage
+const words = await dataToIndexAsync('https://example.com', { 
+  format: 'url',
+  minLength: 3,
+  stopWords: ['the', 'a', 'an', 'and', 'or']
+});
+```
+
+**Real-World Example:**
+```typescript
+// Index a blog post
+const blogHTML = await fetch('/api/posts/123').then(r => r.text());
+const dictionary = dataToIndex(blogHTML, {
+  format: 'html',
+  minLength: 3,
+  stopWords: ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']
+});
+
+const search = createFuzzySearch(dictionary, {
+  languages: ['english'],
+  performance: 'balanced'
+});
+
+// Search the blog content
+const results = search.search('typescript');
+```
+
+**Benefits:**
+- ✅ **One-Liner Indexing** - Extract words from any format
+- ✅ **Automatic Cleanup** - Removes HTML tags, decodes entities
+- ✅ **Deduplication** - Returns unique words only
+- ✅ **Flexible Options** - Customize extraction behavior
+- ✅ **Zero Dependencies** - Pure JavaScript implementation
+
+**Use Cases:**
+- 📄 **Content Search** - Index blog posts, articles, documentation
+- 🛍️ **Product Search** - Extract from product descriptions (HTML/JSON)
+- 📧 **Email Search** - Index email content
+- 📱 **App Content** - Search within app screens/pages
+- 🌐 **Web Scraping** - Index scraped web content
+
 ## 🧪 Algorithm Details
 
 ### Matching Strategies
