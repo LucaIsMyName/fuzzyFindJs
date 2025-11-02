@@ -20,20 +20,11 @@ function matchPhrase(text, phrase, options = {}) {
   if (opts.exactMatch) {
     return { matched: false, score: 0, matchType: "none" };
   }
-  const fuzzyMatch = findFuzzyPhrase(
-    normalizedText,
-    normalizedPhrase,
-    opts.maxEditDistance,
-    opts.useTranspositions
-  );
+  const fuzzyMatch = findFuzzyPhrase(normalizedText, normalizedPhrase, opts.maxEditDistance, opts.useTranspositions);
   if (fuzzyMatch.matched) {
     return { ...fuzzyMatch, matchType: "fuzzy" };
   }
-  const proximityMatch = findProximityMatch(
-    normalizedText,
-    normalizedPhrase,
-    opts.maxProximityDistance
-  );
+  const proximityMatch = findProximityMatch(normalizedText, normalizedPhrase, opts.maxProximityDistance);
   if (proximityMatch.matched) {
     return { ...proximityMatch, matchType: "proximity" };
   }

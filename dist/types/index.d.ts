@@ -33,8 +33,43 @@ export { BloomFilter, createBloomFilter, } from "./algorithms/bloom-filter.js";
 export type { BloomFilterConfig, } from "./algorithms/bloom-filter.js";
 export { ObjectPool, ArrayPool, MapPool, SetPool, withPooledArray, globalArrayPool, globalMapPool, globalSetPool, } from "./utils/memory-pool.js";
 /**
- * Quick start function with sensible defaults
- * Perfect for getting started quickly
+ * Creates a fuzzy search instance with sensible defaults - the easiest way to get started.
+ *
+ * This convenience function combines index building and searching into a simple API.
+ * It's perfect for quick prototyping and simple use cases. For advanced features,
+ * use {@link buildFuzzyIndex} and {@link getSuggestions} directly.
+ *
+ * @param dictionary - Array of strings to make searchable
+ * @param options - Simple configuration options
+ * @param options.languages - Languages to enable (default: ['english'])
+ * @param options.performance - Performance mode: 'fast', 'balanced', or 'comprehensive' (default: 'balanced')
+ * @param options.maxResults - Maximum results to return per search (default: 5)
+ *
+ * @returns Object with search() method and the underlying index
+ * @returns {Function} search - Function to search the index: (query: string, maxResults?: number) => SuggestionResult[]
+ * @returns {FuzzyIndex} index - The underlying fuzzy index (for advanced usage)
+ *
+ * @example
+ * ```typescript
+ * // Quick start - one line setup
+ * const search = createFuzzySearch(['apple', 'banana', 'cherry']);
+ * const results = search.search('aple');
+ * // Returns: [{ display: 'apple', score: 0.9, ... }]
+ *
+ * // With options
+ * const search = createFuzzySearch(['Krankenhaus', 'Apotheke'], {
+ *   languages: ['german'],
+ *   performance: 'comprehensive',
+ *   maxResults: 10
+ * });
+ *
+ * // Access underlying index for advanced features
+ * const { search: searchFn, index } = createFuzzySearch(['hello', 'world']);
+ * console.log(index.base); // ['hello', 'world']
+ * ```
+ *
+ * @see {@link buildFuzzyIndex} for advanced index building
+ * @see {@link getSuggestions} for advanced search options
  */
 export declare function createFuzzySearch(dictionary: string[], options?: {
     languages?: string[];

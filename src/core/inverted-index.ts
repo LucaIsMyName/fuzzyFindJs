@@ -473,15 +473,15 @@ function findFuzzyMatchesInverted(
   // OPTIMIZATION: For very large datasets (50K+), use Trie prefix filtering first
   let termsArray: [string, PostingList][];
 
-  if (datasetSize > 50000 && query.length >= 2) {
+  if (datasetSize > 50000 && query.length >= 2 && invertedIndex.termTrie) {
     // Get prefix matches from Trie (much faster than iterating all terms)
     // Use longer prefix for 100K+ datasets for better filtering
     const prefixLength = datasetSize > 100000 ? Math.min(3, query.length) : Math.min(2, query.length);
     const prefix = query.substring(0, prefixLength);
-    const prefixMatches = invertedIndex.termTrie.search(prefix);
+    const prefixMatches = invertedIndex.termTrie.findWithPrefix(prefix);
 
     // Only check terms that share a prefix with the query
-    termsArray = prefixMatches.map((term: string) => [term, invertedIndex.termToPostings.get(term)] as [string, PostingList | undefined]).filter((entry: [string, PostingList | undefined]): entry is [string, PostingList] => entry[1] !== undefined);
+    termsArray = prefixMatches.map(([term, _docIds]: [string, number[]]) => [term, invertedIndex.termToPostings.get(term)] as [string, PostingList | undefined]).filter((entry: [string, PostingList | undefined]): entry is [string, PostingList] => entry[1] !== undefined);
 
     // If prefix filtering gives us too few candidates, fall back to full search
     if (termsArray.length < 100) {

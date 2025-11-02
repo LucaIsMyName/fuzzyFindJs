@@ -1,6 +1,6 @@
 {
   "name": "fuzzyfindjs",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "A powerful, multi-language optimized fuzzy search library with phonetic matching, compound word splitting, and intelligent synonym support",
   "type": "module",
   "main": "./dist/cjs/index.js",

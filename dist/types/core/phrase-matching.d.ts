@@ -19,7 +19,7 @@ export interface PhraseMatchResult {
     /** Match score (0-1) */
     score: number;
     /** Type of match */
-    matchType: 'exact' | 'fuzzy' | 'proximity' | 'none';
+    matchType: "exact" | "fuzzy" | "proximity" | "none";
     /** Start position in text */
     startPos?: number;
     /** End position in text */

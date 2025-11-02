@@ -271,11 +271,11 @@ function findFuzzyMatchesInverted(query, invertedIndex, documents, matches, proc
   const MAX_FUZZY_CANDIDATES = datasetSize > 1e5 ? 1e3 : datasetSize > 5e4 ? 1500 : datasetSize > 2e4 ? 3e3 : datasetSize > 1e4 ? 5e3 : 8e3;
   let candidatesChecked = 0;
   let termsArray;
-  if (datasetSize > 5e4 && query.length >= 2) {
+  if (datasetSize > 5e4 && query.length >= 2 && invertedIndex.termTrie) {
     const prefixLength = datasetSize > 1e5 ? Math.min(3, query.length) : Math.min(2, query.length);
     const prefix = query.substring(0, prefixLength);
-    const prefixMatches = invertedIndex.termTrie.search(prefix);
-    termsArray = prefixMatches.map((term) => [term, invertedIndex.termToPostings.get(term)]).filter((entry) => entry[1] !== void 0);
+    const prefixMatches = invertedIndex.termTrie.findWithPrefix(prefix);
+    termsArray = prefixMatches.map(([term, _docIds]) => [term, invertedIndex.termToPostings.get(term)]).filter((entry) => entry[1] !== void 0);
     if (termsArray.length < 100) {
       termsArray = Array.from(invertedIndex.termToPostings.entries());
     }

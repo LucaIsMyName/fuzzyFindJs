@@ -1,3 +1,4 @@
+import { globalArrayPool } from "../utils/memory-pool.js";
 function calculateLevenshteinDistance(str1, str2, maxDistance = Infinity) {
   const len1 = str1.length;
   const len2 = str2.length;
@@ -7,32 +8,39 @@ function calculateLevenshteinDistance(str1, str2, maxDistance = Infinity) {
   if (len1 === 0) return len2;
   if (len2 === 0) return len1;
   if (str1 === str2) return 0;
-  let previousRow = new Array(len2 + 1);
-  let currentRow = new Array(len2 + 1);
-  for (let j = 0; j <= len2; j++) {
-    previousRow[j] = j;
-  }
-  for (let i = 1; i <= len1; i++) {
-    currentRow[0] = i;
-    let minInRow = i;
-    for (let j = 1; j <= len2; j++) {
-      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-      currentRow[j] = Math.min(
-        currentRow[j - 1] + 1,
-        // insertion
-        previousRow[j] + 1,
-        // deletion
-        previousRow[j - 1] + cost
-        // substitution
-      );
-      minInRow = Math.min(minInRow, currentRow[j]);
+  const previousRow = globalArrayPool.acquire(len2 + 1);
+  const currentRow = globalArrayPool.acquire(len2 + 1);
+  try {
+    for (let j = 0; j <= len2; j++) {
+      previousRow[j] = j;
     }
-    if (minInRow > maxDistance) {
-      return maxDistance + 1;
+    for (let i = 1; i <= len1; i++) {
+      currentRow[0] = i;
+      let minInRow = i;
+      for (let j = 1; j <= len2; j++) {
+        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        currentRow[j] = Math.min(
+          currentRow[j - 1] + 1,
+          // insertion
+          previousRow[j] + 1,
+          // deletion
+          previousRow[j - 1] + cost
+          // substitution
+        );
+        minInRow = Math.min(minInRow, currentRow[j]);
+      }
+      if (minInRow > maxDistance) {
+        return maxDistance + 1;
+      }
+      for (let j = 0; j <= len2; j++) {
+        previousRow[j] = currentRow[j];
+      }
     }
-    [previousRow, currentRow] = [currentRow, previousRow];
+    return previousRow[len2];
+  } finally {
+    globalArrayPool.release(previousRow);
+    globalArrayPool.release(currentRow);
   }
-  return previousRow[len2];
 }
 function calculateDamerauLevenshteinDistance(str1, str2, maxDistance = Infinity) {
   const len1 = str1.length;
@@ -95,15 +103,21 @@ function calculateNgramSimilarity(str1, str2, n = 3) {
   if (ngrams1.length === 0 || ngrams2.length === 0) return 0;
   const set1 = new Set(ngrams1);
   const set2 = new Set(ngrams2);
-  const intersection = new Set([...set1].filter((x) => set2.has(x)));
-  const union = /* @__PURE__ */ new Set([...set1, ...set2]);
-  return intersection.size / union.size;
+  let intersectionSize = 0;
+  for (const item of set1) {
+    if (set2.has(item)) {
+      intersectionSize++;
+    }
+  }
+  const unionSize = set1.size + set2.size - intersectionSize;
+  return unionSize > 0 ? intersectionSize / unionSize : 0;
 }
 function generateNgrams(str, n) {
   if (str.length < n) return [str];
-  const ngrams = [];
-  for (let i = 0; i <= str.length - n; i++) {
-    ngrams.push(str.slice(i, i + n));
+  const count = str.length - n + 1;
+  const ngrams = new Array(count);
+  for (let i = 0; i < count; i++) {
+    ngrams[i] = str.slice(i, i + n);
   }
   return ngrams;
 }

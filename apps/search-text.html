@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,31 +9,79 @@
   <script src="../dist/umd/fuzzyfindjs.min.js"></script>
   <style>
     /* Match type highlight colors */
-    .highlight-exact { background-color: #ef4444; color: white; padding: 2px 4px; border-radius: 2px; }
-    .highlight-fuzzy { background-color: #60a5fa; color: white; padding: 2px 4px; border-radius: 2px; }
-    .highlight-phonetic { background-color: #a78bfa; color: white; padding: 2px 4px; border-radius: 2px; }
-    .highlight-synonym { background-color: #facc15; color: black; padding: 2px 4px; border-radius: 2px; }
-    .highlight-prefix { background-color: #34d399; color: white; padding: 2px 4px; border-radius: 2px; }
-    .highlight-compound { background-color: #f97316; color: white; padding: 2px 4px; border-radius: 2px; }
-    
+    .highlight-exact {
+      background-color: #ef4444;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .highlight-fuzzy {
+      background-color: #60a5fa;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .highlight-phonetic {
+      background-color: #a78bfa;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .highlight-synonym {
+      background-color: #facc15;
+      color: black;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .highlight-prefix {
+      background-color: #34d399;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .highlight-compound {
+      background-color: #f97316;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
     /* Custom scrollbar */
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
     /* Contenteditable placeholder */
     #editableContent:empty:before {
       content: attr(placeholder);
       color: #9ca3af;
       font-style: italic;
     }
-    
+
     #editableContent:focus:before {
       content: none;
     }
   </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <!-- Header -->
@@ -49,13 +98,9 @@
           <label for="searchInput" class="block text-sm font-semibold text-gray-700 mb-2">
             Search Query
           </label>
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Type to search... or try FQL: fql(library AND search)"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-          />
-          
+          <input type="text" id="searchInput" placeholder="Type to search... or try FQL: fql(library AND search)"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
+
           <!-- FQL Examples -->
           <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div class="flex items-center justify-between mb-2">
@@ -63,22 +108,28 @@
               <span class="text-xs text-blue-600">FQL Enabled ✓</span>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button onclick="tryExample('fql(library AND search)')" class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
+              <button onclick="tryExample('fql(library AND search)')"
+                class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
                 library AND search
               </button>
-              <button onclick="tryExample('fql(fuzzy OR phonetic)')" class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
+              <button onclick="tryExample('fql(fuzzy OR phonetic)')"
+                class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
                 fuzzy OR phonetic
               </button>
-              <button onclick="tryExample('fql(EXACT:TypeScript)')" class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
+              <button onclick="tryExample('fql(EXACT:TypeScript)')"
+                class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
                 EXACT:TypeScript
               </button>
-              <button onclick="tryExample('fql(FUZZY:librery)')" class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
+              <button onclick="tryExample('fql(FUZZY:librery)')"
+                class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
                 FUZZY:librery (typo)
               </button>
-              <button onclick="tryExample('fql((language OR multi) AND support)')" class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
+              <button onclick="tryExample('fql((language OR multi) AND support)')"
+                class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
                 (language OR multi) AND support
               </button>
-              <button onclick="tryExample('fql(performance SCORE>0.9)')" class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
+              <button onclick="tryExample('fql(performance SCORE>0.9)')"
+                class="text-xs px-2 py-1 bg-white border border-blue-300 rounded hover:bg-blue-100 transition">
                 performance SCORE>0.9
               </button>
             </div>
@@ -90,27 +141,22 @@
           <div class="flex items-center justify-between mb-4">
             <div>
               <h2 class="text-lg font-semibold text-gray-900">Text Content & Search Results</h2>
-              <p class="text-xs text-gray-500 mt-1">Edit text directly - highlights update in real-time • Punctuation is ignored for matching</p>
+              <p class="text-xs text-gray-500 mt-1">Edit text directly - highlights update in real-time • Punctuation is
+                ignored for matching</p>
             </div>
             <div class="flex items-center space-x-4">
               <div id="matchCount" class="text-sm text-gray-600">
                 No matches
               </div>
-              <button
-                id="resetText"
-                class="text-sm text-gray-600 hover:text-gray-900 font-medium"
-              >
+              <button id="resetText" class="text-sm text-gray-600 hover:text-gray-900 font-medium">
                 Reset to Default
               </button>
             </div>
           </div>
-          <div
-            id="editableContent"
-            contenteditable="true"
+          <div id="editableContent" contenteditable="true"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm leading-relaxed custom-scrollbar"
             style="min-height: 400px; max-height: 600px; overflow-y: auto;"
-            placeholder="Enter or paste your text content here..."
-          ></div>
+            placeholder="Enter or paste your text content here..."></div>
           <div class="mt-2 text-xs text-gray-500">
             <span id="wordCount">0 words</span> • Changes are saved automatically
           </div>
@@ -231,28 +277,15 @@
               <label class="text-xs text-gray-600 mb-2 block">
                 Max Results: <span id="maxResultsValue" class="font-semibold">10</span>
               </label>
-              <input
-                type="range"
-                id="maxResults"
-                min="1"
-                max="50"
-                value="10"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
+              <input type="range" id="maxResults" min="1" max="50" value="10"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div>
               <label class="text-xs text-gray-600 mb-2 block">
                 Fuzzy Threshold: <span id="fuzzyThresholdValue" class="font-semibold">0.8</span>
               </label>
-              <input
-                type="range"
-                id="fuzzyThreshold"
-                min="0"
-                max="1"
-                step="0.1"
-                value="0.8"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
+              <input type="range" id="fuzzyThreshold" min="0" max="1" step="0.1" value="0.8"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
             </div>
             <label class="flex items-center cursor-pointer">
               <input type="checkbox" id="enableFQL" checked class="w-4 h-4 text-blue-600 rounded">
@@ -324,7 +357,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
       if (savedSearch) searchInput.value = savedSearch;
       if (savedText) editableContent.textContent = savedText;
       else editableContent.textContent = DEFAULT_TEXT;
-      
+
       if (savedConfig) {
         currentConfig = { ...currentConfig, ...JSON.parse(savedConfig) };
         applyConfigToUI();
@@ -350,13 +383,13 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
     function applyConfigToUI() {
       // Performance mode
       document.querySelector(`input[name="performance"][value="${currentConfig.performance}"]`).checked = true;
-      
+
       // Features
       currentConfig.features.forEach(feature => {
         const checkbox = document.getElementById(`feature-${feature}`);
         if (checkbox) checkbox.checked = true;
       });
-      
+
       // Advanced settings
       document.getElementById('maxResults').value = currentConfig.maxResults;
       document.getElementById('maxResultsValue').textContent = currentConfig.maxResults;
@@ -384,7 +417,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
       // Split text into words and clean them (remove punctuation)
       const rawWords = text.split(/\s+/);
       const cleanWords = rawWords.map(word => word.replace(/[.,!?;:()"\[\]{}]/g, ''));
-      
+
       // Build index with cleaned words
       fuzzyIndex = FuzzyFindJS.buildFuzzyIndex(cleanWords, {
         config: {
@@ -404,7 +437,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
     // Perform search
     function performSearch() {
       const query = searchInput.value.trim();
-      
+
       if (!query || !fuzzyIndex) {
         // Clear highlights - show plain text
         const plainText = getPlainText();
@@ -450,10 +483,10 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
       const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
       const cursorOffset = range ? range.startOffset : 0;
       const cursorNode = range ? range.startContainer : null;
-      
+
       const text = getPlainText();
       const words = text.split(/\s+/);
-      
+
       // Debug: Always log for now
       console.log('=== HIGHLIGHT DEBUG ===');
       console.log('Query:', searchInput.value);
@@ -461,24 +494,24 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
       console.log('First result FULL:', results[0]);
       console.log('Result displays:', results.map(r => r.display));
       console.log('Result baseWords:', results.map(r => r.baseWord));
-      
+
       // Create a map of clean word -> match type
       const matchMap = new Map();
       results.forEach(result => {
         // Get match type - handle both _debug_matchType and regular matchType
         const matchType = result._debug_matchType || result.matchType || 'exact';
-        
+
         // Try multiple properties: display, baseWord, word
         const displayWord = result.display || result.baseWord || result.word || '';
         const cleanDisplay = displayWord.toLowerCase().replace(/[.,!?;:()"\[\]{}]/g, '');
-        
+
         console.log(`Result: display="${result.display}", baseWord="${result.baseWord}", clean="${cleanDisplay}", type=${matchType}`);
-        
+
         if (cleanDisplay) {  // Only add if there's content
           matchMap.set(cleanDisplay, matchType);
         }
       });
-      
+
       console.log('Match map size:', matchMap.size);
       console.log('Match map entries:', Array.from(matchMap.entries()));
 
@@ -487,7 +520,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
         // Clean the word for matching (remove punctuation)
         const cleanWord = word.toLowerCase().replace(/[.,!?;:()"\[\]{}]/g, '');
         const matchType = matchMap.get(cleanWord);
-        
+
         if (matchType && cleanWord) {  // Only highlight if there's actual content after cleaning
           return `<span class="highlight-${matchType}">${word}</span>`;
         }
@@ -495,7 +528,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
       });
 
       editableContent.innerHTML = highlightedWords.join(' ');
-      
+
       // Try to restore cursor position (best effort)
       try {
         if (cursorNode && editableContent.contains(cursorNode)) {
@@ -513,7 +546,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
     // Show match details
     function showMatchDetails(results) {
       matchDetails.classList.remove('hidden');
-      
+
       matchList.innerHTML = results.map((result, i) => `
         <div class="flex items-center justify-between text-sm p-2 bg-gray-50 rounded">
           <div class="flex items-center space-x-2">
@@ -544,7 +577,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
     let inputTimeout;
     editableContent.addEventListener('input', () => {
       updateWordCount();
-      
+
       // Debounce rebuild and search (wait 500ms after user stops typing)
       clearTimeout(inputTimeout);
       inputTimeout = setTimeout(() => {
@@ -624,7 +657,7 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
       searchInput.value = query;
       performSearch();
       saveToStorage();
-      
+
       // Scroll to results
       editableContent.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -633,4 +666,5 @@ Advanced features include phrase search with quotes, FQL (Fuzzy Query Language) 
     loadFromStorage();
   </script>
 </body>
+
 </html>
