@@ -7,6 +7,7 @@ import { calculateHighlights } from "./highlighting.js";
 import { SearchCache } from "./cache.js";
 import { removeAccents } from "../utils/accent-normalization.js";
 import { extractFieldValues, normalizeFieldWeights } from "./field-weighting.js";
+import { filterStopWords } from "../utils/stop-words.js";
 
 /**
  * Build a fuzzy search index from a dictionary of words or objects
@@ -344,9 +345,15 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
     return [];
   }
 
-  // CACHE: Check cache first
+  // STOP WORDS: Filter stop words from query if enabled
+  let processedQuery = query;
+  if (config.enableStopWords && config.stopWords && config.stopWords.length > 0) {
+    processedQuery = filterStopWords(query, config.stopWords);
+  }
+
+  // CACHE: Check cache first (use processed query for cache key)
   if (index._cache) {
-    const cached = index._cache.get(query, limit, options);
+    const cached = index._cache.get(processedQuery, limit, options);
     if (cached) {
       return cached; // Cache hit - return immediately!
     }
@@ -362,10 +369,10 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
 
   // AUTO-DETECTION: Use inverted index if available
   if (index.invertedIndex && index.documents) {
-    const results = getSuggestionsInverted(index, query, limit, threshold, processors, options);
+    const results = getSuggestionsInverted(index, processedQuery, limit, threshold, processors, options);
     // Cache the results
     if (index._cache) {
-      index._cache.set(query, results, limit, options);
+      index._cache.set(processedQuery, results, limit, options);
     }
     return results;
   }
@@ -375,7 +382,7 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
 
   // Process query with each language processor
   for (const processor of processors) {
-    const normalizedQuery = processor.normalize(query.trim());
+    const normalizedQuery = processor.normalize(processedQuery.trim());
 
     // Find matches using different strategies
     findExactMatches(normalizedQuery, index, matches, processor.language);
@@ -391,14 +398,14 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
 
   // Convert matches to results and rank them
   const results = Array.from(matches.values())
-    .map((match) => createSuggestionResult(match, query, threshold, index, options))
+    .map((match) => createSuggestionResult(match, processedQuery, threshold, index, options))
     .filter((result): result is SuggestionResult => result !== null)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 
   // Cache the results
   if (index._cache) {
-    index._cache.set(query, results, limit, options);
+    index._cache.set(processedQuery, results, limit, options);
   }
 
   return results;

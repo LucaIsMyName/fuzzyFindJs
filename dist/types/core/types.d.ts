@@ -83,8 +83,12 @@ export interface FuzzyConfig {
     fieldWeights?: Record<string, number>;
     /** Enable search result caching (default: true) */
     enableCache?: boolean;
-    /** Cache capacity - number of queries to cache (default: 100) */
+    /** Cache size (default: 100) */
     cacheSize?: number;
+    /** Stop words to filter from queries (e.g., ['the', 'a', 'an']) */
+    stopWords?: string[];
+    /** Enable automatic stop word filtering (default: false) */
+    enableStopWords?: boolean;
 }
 export type FuzzyFeature = "phonetic" | "compound" | "synonyms" | "keyboard-neighbors" | "partial-words" | "missing-letters" | "extra-letters" | "transpositions";
 export interface LanguageProcessor {

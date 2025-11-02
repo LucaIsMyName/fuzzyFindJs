@@ -27,6 +27,9 @@ export { serializeIndex, deserializeIndex, saveIndexToLocalStorage, loadIndexFro
 // Accent normalization utilities
 export { removeAccents, hasAccents, normalizeForComparison, getAccentVariants } from "./utils/accent-normalization.js";
 
+// Stop words utilities
+export { filterStopWords, getStopWordsForLanguages, isStopWord, DEFAULT_STOP_WORDS } from "./utils/stop-words.js";
+
 // Configuration
 export { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 

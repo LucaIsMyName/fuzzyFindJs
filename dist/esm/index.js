@@ -4,6 +4,7 @@ import { calculateHighlights, formatHighlightedHTML } from "./core/highlighting.
 import { LRUCache, SearchCache } from "./core/cache.js";
 import { deserializeIndex, getSerializedSize, loadIndexFromLocalStorage, saveIndexToLocalStorage, serializeIndex } from "./core/serialization.js";
 import { getAccentVariants, hasAccents, normalizeForComparison, removeAccents } from "./utils/accent-normalization.js";
+import { DEFAULT_STOP_WORDS, filterStopWords, getStopWordsForLanguages, isStopWord } from "./utils/stop-words.js";
 import { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 import { LanguageRegistry } from "./languages/index.js";
 import { areStringsSimilar, calculateDamerauLevenshteinDistance, calculateLevenshteinDistance, calculateNgramSimilarity, distanceToSimilarity } from "./algorithms/levenshtein.js";
@@ -29,6 +30,7 @@ const VERSION = "1.0.2";
 export {
   BaseLanguageProcessor,
   DEFAULT_CONFIG,
+  DEFAULT_STOP_WORDS,
   EnglishProcessor,
   FrenchProcessor,
   GermanProcessor,
@@ -48,11 +50,14 @@ export {
   createFuzzySearch,
   deserializeIndex,
   distanceToSimilarity,
+  filterStopWords,
   formatHighlightedHTML,
   getAccentVariants,
   getSerializedSize,
+  getStopWordsForLanguages,
   getSuggestions,
   hasAccents,
+  isStopWord,
   loadIndexFromLocalStorage,
   mergeConfig,
   normalizeForComparison,

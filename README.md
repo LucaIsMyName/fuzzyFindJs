@@ -21,6 +21,7 @@ A powerful, multi-language optimized fuzzy search library with phonetic matching
 - 🔄 **Batch Search**: Search multiple queries at once with auto-deduplication
 - 🌍 **Accent Normalization**: Automatic handling of accented characters (café ↔ cafe)
 - ⚖️ **Field Weighting**: Multi-field search with weighted scoring (title > description)
+- 🚫 **Stop Words Filtering**: Remove common words (the, a, an) for better search quality
 - 🎯 **Typo Tolerant**: Handles missing letters, extra letters, transpositions, keyboard neighbors
 - 🔤 **N-gram Matching**: Fast partial substring matching
 - 📊 **Configurable Scoring**: Customizable thresholds and edit distances
@@ -1380,6 +1381,69 @@ const index = buildFuzzyIndex(docs, {
 
 const results = getSuggestions(index, 'typescript');
 // "TypeScript Guide" ranks first (title match with 3x weight)
+```
+
+### 12. Stop Words Filtering (NEW!)
+
+Filter common words that add noise to search results:
+
+```typescript
+import { buildFuzzyIndex, getSuggestions, DEFAULT_STOP_WORDS } from 'fuzzyfindjs';
+
+// Enable stop words filtering
+const index = buildFuzzyIndex(dictionary, {
+  config: {
+    stopWords: ['the', 'a', 'an', 'is', 'at', 'on', 'in'],
+    enableStopWords: true
+  }
+});
+
+// Search with automatic filtering
+getSuggestions(index, 'the hospital');
+// Searches for: "hospital" (stop word "the" removed)
+
+getSuggestions(index, 'a school in the city');
+// Searches for: "school city" (stop words filtered)
+
+// Use built-in stop words for any language
+const index2 = buildFuzzyIndex(dictionary, {
+  config: {
+    stopWords: DEFAULT_STOP_WORDS.english,  // 38 common English stop words
+    enableStopWords: true
+  }
+});
+
+// Available languages
+DEFAULT_STOP_WORDS.english   // the, a, an, is, at, on, in, to, for...
+DEFAULT_STOP_WORDS.german    // der, die, das, ein, eine, und, oder...
+DEFAULT_STOP_WORDS.spanish   // el, la, los, las, un, una, de, en...
+DEFAULT_STOP_WORDS.french    // le, la, les, un, une, de, à, et...
+```
+
+**Benefits:**
+- ✅ **Better Quality** - Focus on meaningful words
+- ✅ **Faster Search** - Fewer words to process
+- ✅ **Case Preserved** - Original text case maintained
+- ✅ **Multi-language** - Built-in stop words for 4 languages
+- ✅ **Safe Fallback** - Returns original query if all words are stop words
+
+**Use Cases:**
+- 🏥 **Medical Search**: "the hospital" → "hospital"
+- 📚 **Document Search**: "a guide to programming" → "guide programming"
+- 🏢 **Business Search**: "the company in london" → "company london"
+- 🔍 **General Search**: Remove noise from user queries
+
+**Manual Filtering:**
+```typescript
+import { filterStopWords, isStopWord } from 'fuzzyfindjs';
+
+// Filter stop words from any text
+filterStopWords('the quick brown fox', ['the', 'a']);
+// → 'quick brown fox'
+
+// Check if a word is a stop word
+isStopWord('the', DEFAULT_STOP_WORDS.english);
+// → true
 ```
 
 ## 🧪 Algorithm Details

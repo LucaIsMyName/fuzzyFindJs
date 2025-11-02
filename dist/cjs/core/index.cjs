@@ -8,6 +8,7 @@ const highlighting = require("./highlighting.cjs");
 const cache = require("./cache.cjs");
 const accentNormalization = require("../utils/accent-normalization.cjs");
 const fieldWeighting = require("./field-weighting.cjs");
+const stopWords = require("../utils/stop-words.cjs");
 function buildFuzzyIndex(words = [], options = {}) {
   const config$1 = config.mergeConfig(options.config);
   config.validateConfig(config$1);
@@ -221,8 +222,12 @@ function getSuggestions(index2, query, maxResults, options = {}) {
   if (!query || query.trim().length < config2.minQueryLength) {
     return [];
   }
+  let processedQuery = query;
+  if (config2.enableStopWords && config2.stopWords && config2.stopWords.length > 0) {
+    processedQuery = stopWords.filterStopWords(query, config2.stopWords);
+  }
   if (index2._cache) {
-    const cached = index2._cache.get(query, limit, options);
+    const cached = index2._cache.get(processedQuery, limit, options);
     if (cached) {
       return cached;
     }
@@ -233,15 +238,15 @@ function getSuggestions(index2, query, maxResults, options = {}) {
     return [];
   }
   if (index2.invertedIndex && index2.documents) {
-    const results2 = getSuggestionsInverted(index2, query, limit, threshold, processors, options);
+    const results2 = getSuggestionsInverted(index2, processedQuery, limit, threshold, processors, options);
     if (index2._cache) {
-      index2._cache.set(query, results2, limit, options);
+      index2._cache.set(processedQuery, results2, limit, options);
     }
     return results2;
   }
   const matches = /* @__PURE__ */ new Map();
   for (const processor of processors) {
-    const normalizedQuery = processor.normalize(query.trim());
+    const normalizedQuery = processor.normalize(processedQuery.trim());
     findExactMatches(normalizedQuery, index2, matches, processor.language);
     findPrefixMatches(normalizedQuery, index2, matches, processor.language);
     findPhoneticMatches(normalizedQuery, processor, index2, matches);
@@ -251,9 +256,9 @@ function getSuggestions(index2, query, maxResults, options = {}) {
       findFuzzyMatches(normalizedQuery, index2, matches, processor, config2);
     }
   }
-  const results = Array.from(matches.values()).map((match) => createSuggestionResult(match, query, threshold, index2, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
+  const results = Array.from(matches.values()).map((match) => createSuggestionResult(match, processedQuery, threshold, index2, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
   if (index2._cache) {
-    index2._cache.set(query, results, limit, options);
+    index2._cache.set(processedQuery, results, limit, options);
   }
   return results;
 }
