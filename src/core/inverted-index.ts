@@ -398,12 +398,45 @@ function findFuzzyMatchesInverted(query: string, invertedIndex: InvertedIndex, d
   // Pre-compute for performance
   const useTranspositions = config.features?.includes('transpositions');
   
-  // Limit number of fuzzy candidates to avoid performance issues
-  const MAX_FUZZY_CANDIDATES = 10000;
+  // OPTIMIZATION: Dynamic candidate limit based on dataset size
+  // Smaller limit for larger datasets to maintain sub-10ms performance
+  const datasetSize = invertedIndex.termToPostings.size;
+  const MAX_FUZZY_CANDIDATES = datasetSize > 50000 ? 2000 : 
+                               datasetSize > 20000 ? 5000 : 
+                               datasetSize > 10000 ? 8000 : 10000;
   let candidatesChecked = 0;
   
-  // Iterate through all terms with optimized filtering
-  for (const [term, posting] of invertedIndex.termToPostings.entries()) {
+  // OPTIMIZATION: For very large datasets (50K+), use Trie prefix filtering first
+  let termsArray: [string, PostingList][];
+  
+  if (datasetSize > 50000 && query.length >= 2) {
+    // Get prefix matches from Trie (much faster than iterating all terms)
+    const prefixLength = Math.min(2, query.length);
+    const prefix = query.substring(0, prefixLength);
+    const prefixMatches = invertedIndex.termTrie.search(prefix);
+    
+    // Only check terms that share a prefix with the query
+    termsArray = prefixMatches
+      .map((term: string) => [term, invertedIndex.termToPostings.get(term)] as [string, PostingList | undefined])
+      .filter((entry: [string, PostingList | undefined]): entry is [string, PostingList] => entry[1] !== undefined);
+    
+    // If prefix filtering gives us too few candidates, fall back to full search
+    if (termsArray.length < 100) {
+      termsArray = Array.from(invertedIndex.termToPostings.entries());
+    }
+  } else {
+    termsArray = Array.from(invertedIndex.termToPostings.entries());
+  }
+  
+  // Sort by length similarity for better early termination
+  termsArray.sort((a, b) => {
+    const aDiff = Math.abs(a[0].length - queryLen);
+    const bDiff = Math.abs(b[0].length - queryLen);
+    return aDiff - bDiff;
+  });
+  
+  // Iterate through sorted terms with optimized filtering
+  for (const [term, posting] of termsArray) {
     // OPTIMIZATION 1: Length-based pre-filter (O(1) check)
     // This eliminates 80-90% of candidates before expensive Levenshtein
     const termLen = term.length;
@@ -417,9 +450,19 @@ function findFuzzyMatchesInverted(query: string, invertedIndex: InvertedIndex, d
     }
     candidatesChecked++;
     
-    // OPTIMIZATION 3: Early termination if we have enough matches
-    if (matches.size >= config.maxResults * 3) {
+    // OPTIMIZATION 3: Early termination if we have enough high-quality matches
+    // More aggressive for large datasets
+    const earlyTerminationThreshold = datasetSize > 50000 ? config.maxResults * 2 : config.maxResults * 3;
+    if (matches.size >= earlyTerminationThreshold) {
       break;
+    }
+    
+    // OPTIMIZATION 4: Skip if first character is too different (cheap check)
+    if (query.length > 0 && term.length > 0) {
+      const firstCharDiff = Math.abs(query.charCodeAt(0) - term.charCodeAt(0));
+      if (firstCharDiff > 10 && maxDistance < 2) { // Allow more variance for higher edit distance
+        continue;
+      }
     }
     
     // Now do expensive edit distance calculation
