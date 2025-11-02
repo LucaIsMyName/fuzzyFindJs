@@ -19,6 +19,7 @@ A powerful, multi-language optimized fuzzy search library with phonetic matching
 - ⚡ **Search Caching**: 10-100x faster repeated queries with LRU cache
 - 💾 **Index Serialization**: Save/load indices for instant startup (100x faster)
 - 🔄 **Batch Search**: Search multiple queries at once with auto-deduplication
+- 🌍 **Accent Normalization**: Automatic handling of accented characters (café ↔ cafe)
 - 🎯 **Typo Tolerant**: Handles missing letters, extra letters, transpositions, keyboard neighbors
 - 🔤 **N-gram Matching**: Fast partial substring matching
 - 📊 **Configurable Scoring**: Customizable thresholds and edit distances
@@ -1262,6 +1263,54 @@ const formResults = batchSearch(index, [
 - Batch processing
 - Server-side batch queries
 - Deduplicating search requests
+
+### 10. Accent Normalization (NEW!)
+
+Automatic handling of accented characters for international support:
+
+```typescript
+import { buildFuzzyIndex, getSuggestions, removeAccents } from 'fuzzyfindjs';
+
+// Utility function
+removeAccents('café');   // → 'cafe'
+removeAccents('José');   // → 'Jose'
+removeAccents('Müller'); // → 'Muller'
+removeAccents('naïve');  // → 'naive'
+
+// Automatic in search - works bidirectionally!
+const index = buildFuzzyIndex(['café', 'naïve', 'José', 'Müller']);
+
+// Search without accents - finds accented words
+getSuggestions(index, 'cafe');   // ✅ Finds 'café'
+getSuggestions(index, 'naive');  // ✅ Finds 'naïve'
+getSuggestions(index, 'Jose');   // ✅ Finds 'José'
+getSuggestions(index, 'Muller'); // ✅ Finds 'Müller'
+
+// Search with accents - also works!
+const index2 = buildFuzzyIndex(['cafe', 'naive']);
+getSuggestions(index2, 'café');  // ✅ Finds 'cafe'
+getSuggestions(index2, 'naïve'); // ✅ Finds 'naive'
+```
+
+**Supported Languages:**
+- 🇫🇷 French: café, crème, naïve, résumé, château
+- 🇪🇸 Spanish: José, María, niño, señor, mañana
+- 🇩🇪 German: Müller, Köln, Zürich, Straße, Äpfel
+- 🇵🇹 Portuguese: São Paulo, açúcar, coração
+- 🇵🇱 Polish: Łódź, Kraków, Gdańsk
+- And 100+ more accented characters!
+
+**Benefits:**
+- **Automatic** - no configuration needed
+- **Bidirectional** - café ↔ cafe both work
+- **Preserves original** - display text keeps accents
+- **Zero overhead** - indexed once, searched fast
+
+**Perfect for:**
+- International applications
+- Multi-language search
+- User-friendly input (users can't always type accents)
+- E-commerce with international products
 
 ## 🧪 Algorithm Details
 
