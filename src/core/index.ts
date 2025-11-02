@@ -6,11 +6,12 @@ import { buildInvertedIndex, searchInvertedIndex } from "./inverted-index.js";
 import { calculateHighlights } from "./highlighting.js";
 import { SearchCache } from "./cache.js";
 import { removeAccents } from "../utils/accent-normalization.js";
+import { extractFieldValues, normalizeFieldWeights } from "./field-weighting.js";
 
 /**
- * Build a fuzzy search index from a dictionary of words
+ * Build a fuzzy search index from a dictionary of words or objects
  */
-export function buildFuzzyIndex(words: string[] = [], options: BuildIndexOptions = {}): FuzzyIndex {
+export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildIndexOptions = {}): FuzzyIndex {
   const config = mergeConfig(options.config);
   validateConfig(config);
 
@@ -23,6 +24,15 @@ export function buildFuzzyIndex(words: string[] = [], options: BuildIndexOptions
     throw new Error(`No language processors found for: ${config.languages.join(", ")}`);
   }
 
+  // Check if we're doing multi-field search
+  const hasFields = options.fields && options.fields.length > 0;
+  const isObjectArray = words.length > 0 && typeof words[0] === 'object' && words[0] !== null;
+
+  // Validate: if objects are provided, fields must be specified
+  if (isObjectArray && !hasFields) {
+    throw new Error('When indexing objects, you must specify which fields to index via options.fields');
+  }
+
   const index: FuzzyIndex = {
     base: [],
     variantToBase: new Map(),
@@ -33,6 +43,13 @@ export function buildFuzzyIndex(words: string[] = [], options: BuildIndexOptions
     config,
   };
 
+  // Store field configuration if provided
+  if (hasFields) {
+    index.fields = options.fields;
+    index.fieldWeights = normalizeFieldWeights(options.fields!, options.fieldWeights);
+    index.fieldData = new Map();
+  }
+
   // Store language processors
   languageProcessors.forEach((processor) => {
     index.languageProcessors.set(processor.language, processor);
@@ -41,18 +58,52 @@ export function buildFuzzyIndex(words: string[] = [], options: BuildIndexOptions
   const processedWords = new Set<string>();
   let processed = 0;
 
-  for (const word of words) {
-    if (!word || word.trim().length < config.minQueryLength) continue;
+  for (const item of words) {
+    if (!item) continue;
 
-    const trimmedWord = word.trim();
-    if (processedWords.has(trimmedWord.toLowerCase())) continue;
+    // Handle multi-field objects
+    if (hasFields && isObjectArray) {
+      const fieldValues = extractFieldValues(item, options.fields);
+      if (!fieldValues) continue;
 
-    processedWords.add(trimmedWord.toLowerCase());
-    index.base.push(trimmedWord);
+      // Generate a unique ID for this object (use first field value as base)
+      const baseId = Object.values(fieldValues)[0] || `item_${processed}`;
+      
+      // Store field data
+      index.fieldData!.set(baseId, fieldValues);
 
-    // Process with each language processor
-    for (const processor of languageProcessors) {
-      processWordWithProcessor(trimmedWord, processor, index, config, featureSet);
+      // Index each field separately
+      for (const [fieldName, fieldValue] of Object.entries(fieldValues)) {
+        if (!fieldValue || fieldValue.trim().length < config.minQueryLength) continue;
+
+        const trimmedValue = fieldValue.trim();
+        
+        // Add to base if not already there
+        if (!processedWords.has(baseId.toLowerCase())) {
+          processedWords.add(baseId.toLowerCase());
+          index.base.push(baseId);
+        }
+
+        // Process this field value with each language processor
+        for (const processor of languageProcessors) {
+          processWordWithProcessorAndField(trimmedValue, baseId, fieldName, processor, index, config, featureSet);
+        }
+      }
+    } else {
+      // Handle simple string array (backwards compatible)
+      const word = typeof item === 'string' ? item : String(item);
+      if (word.trim().length < config.minQueryLength) continue;
+
+      const trimmedWord = word.trim();
+      if (processedWords.has(trimmedWord.toLowerCase())) continue;
+
+      processedWords.add(trimmedWord.toLowerCase());
+      index.base.push(trimmedWord);
+
+      // Process with each language processor
+      for (const processor of languageProcessors) {
+        processWordWithProcessor(trimmedWord, processor, index, config, featureSet);
+      }
     }
 
     processed++;
@@ -156,6 +207,101 @@ function processWordWithProcessor(word: string, processor: LanguageProcessor, in
 }
 
 /**
+ * Process a word with field information for multi-field search
+ */
+function processWordWithProcessorAndField(
+  fieldValue: string,
+  baseId: string,
+  fieldName: string,
+  processor: LanguageProcessor,
+  index: FuzzyIndex,
+  config: FuzzyConfig,
+  featureSet: Set<string>
+): void {
+  const normalized = processor.normalize(fieldValue);
+  
+  // Add base word mapping with field metadata
+  addToVariantMapWithField(index.variantToBase, normalized, baseId, fieldName);
+  addToVariantMapWithField(index.variantToBase, fieldValue.toLowerCase(), baseId, fieldName);
+  addToVariantMapWithField(index.variantToBase, fieldValue, baseId, fieldName);
+  
+  // Add accent-insensitive variants
+  const accentFreeWord = removeAccents(fieldValue);
+  if (accentFreeWord !== fieldValue) {
+    addToVariantMapWithField(index.variantToBase, accentFreeWord, baseId, fieldName);
+    addToVariantMapWithField(index.variantToBase, accentFreeWord.toLowerCase(), baseId, fieldName);
+    const normalizedAccentFree = processor.normalize(accentFreeWord);
+    if (normalizedAccentFree !== accentFreeWord.toLowerCase()) {
+      addToVariantMapWithField(index.variantToBase, normalizedAccentFree, baseId, fieldName);
+    }
+  }
+
+  // Generate and index variants
+  if (featureSet.has("partial-words")) {
+    const variants = processor.getWordVariants(fieldValue);
+    variants.forEach((variant) => {
+      addToVariantMapWithField(index.variantToBase, variant, baseId, fieldName);
+    });
+  }
+
+  // Generate phonetic codes
+  if (featureSet.has("phonetic") && processor.supportedFeatures.includes("phonetic")) {
+    const phoneticCode = processor.getPhoneticCode(fieldValue);
+    if (phoneticCode) {
+      addToVariantMapWithField(index.phoneticToBase, phoneticCode, baseId, fieldName);
+    }
+  }
+
+  // Generate n-grams for partial matching
+  const ngrams = generateNgrams(normalized, config.ngramSize);
+  ngrams.forEach((ngram: string) => {
+    addToVariantMapWithField(index.ngramIndex, ngram, baseId, fieldName);
+  });
+
+  // Handle compound words
+  if (featureSet.has("compound") && processor.supportedFeatures.includes("compound")) {
+    const parts = processor.splitCompoundWords(fieldValue);
+    parts.forEach((part) => {
+      if (part.length >= config.minQueryLength) {
+        addToVariantMapWithField(index.variantToBase, part, baseId, fieldName);
+        addToVariantMapWithField(index.variantToBase, processor.normalize(part), baseId, fieldName);
+      }
+    });
+  }
+
+  // Add synonyms
+  if (featureSet.has("synonyms")) {
+    const synonyms = processor.getSynonyms(normalized);
+    synonyms.forEach((synonym) => {
+      addToVariantMapWithField(index.synonymMap, synonym, baseId, fieldName);
+    });
+
+    // Add custom synonyms
+    if (config.customSynonyms) {
+      const customSynonyms = config.customSynonyms[normalized];
+      if (customSynonyms) {
+        customSynonyms.forEach((synonym) => {
+          addToVariantMapWithField(index.synonymMap, synonym, baseId, fieldName);
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Helper function to add mappings to variant maps with field information
+ */
+function addToVariantMapWithField(map: Map<string, Set<string>>, key: string, value: string, _fieldName: string): void {
+  // For now, we'll use a simple approach: store the value with field metadata
+  // The field information will be tracked separately in the index
+  // _fieldName is prefixed with _ to indicate it's reserved for future use
+  if (!map.has(key)) {
+    map.set(key, new Set());
+  }
+  map.get(key)!.add(value);
+}
+
+/**
  * Helper function to add mappings to variant maps
  */
 function addToVariantMap(map: Map<string, Set<string>>, key: string, value: string): void {
@@ -245,7 +391,7 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
 
   // Convert matches to results and rank them
   const results = Array.from(matches.values())
-    .map((match) => createSuggestionResult(match, query, threshold, options))
+    .map((match) => createSuggestionResult(match, query, threshold, index, options))
     .filter((result): result is SuggestionResult => result !== null)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
@@ -425,9 +571,15 @@ function createSuggestionResult(
   match: SearchMatch,
   originalQuery: string,
   threshold: number,
+  index: FuzzyIndex,
   options?: SearchOptions
 ): SuggestionResult | null {
-  const score = calculateMatchScore(match, originalQuery);
+  let score = calculateMatchScore(match, originalQuery);
+  
+  // Apply field weight if present
+  if (match.fieldWeight) {
+    score = Math.min(1.0, score * match.fieldWeight);
+  }
 
   if (score < threshold) {
     return null;
@@ -442,6 +594,12 @@ function createSuggestionResult(
     // @ts-ignore - temporary debug property
     _debug_matchType: match.matchType,
   };
+
+  // Add field information if this is a multi-field search
+  if (index.fieldData && index.fieldData.has(match.word)) {
+    result.fields = index.fieldData.get(match.word);
+    result.field = match.field;
+  }
 
   // Add highlights if requested
   if (options?.includeHighlights) {
@@ -533,7 +691,7 @@ function getSuggestionsInverted(
 
   // Convert to suggestion results (same as classic approach)
   const results = matches
-    .map((match) => createSuggestionResult(match, query, threshold, options))
+    .map((match) => createSuggestionResult(match, query, threshold, index, options))
     .filter((result): result is SuggestionResult => result !== null)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);

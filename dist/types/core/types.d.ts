@@ -14,6 +14,10 @@ export interface SuggestionResult {
     language?: string;
     /** Match positions for highlighting (optional) */
     highlights?: MatchHighlight[];
+    /** Field where match was found (for multi-field search) */
+    field?: string;
+    /** All field values for this result (for multi-field search) */
+    fields?: Record<string, string>;
 }
 /** Highlight information for matched portions of text */
 export interface MatchHighlight {
@@ -45,6 +49,12 @@ export interface FuzzyIndex {
     invertedIndex?: InvertedIndex;
     /** Document metadata store (used with inverted index) */
     documents?: DocumentMetadata[];
+    /** Field names for multi-field search */
+    fields?: string[];
+    /** Field weights for scoring */
+    fieldWeights?: Record<string, number>;
+    /** Field data mapping (word -> field -> value) */
+    fieldData?: Map<string, Record<string, string>>;
 }
 export interface FuzzyConfig {
     /** Languages to enable (default: ['german']) */
@@ -110,6 +120,10 @@ export interface SearchMatch {
     phoneticCode?: string;
     /** Language processor that handled this match */
     language: string;
+    /** Field name where match was found (for multi-field search) */
+    field?: string;
+    /** Field weight multiplier */
+    fieldWeight?: number;
 }
 export type MatchType = "exact" | "prefix" | "substring" | "fuzzy" | "phonetic" | "synonym" | "compound" | "ngram";
 export interface BuildIndexOptions {
@@ -121,11 +135,10 @@ export interface BuildIndexOptions {
     onProgress?: (processed: number, total: number) => void;
     /** Force use of inverted index (auto-enabled for 10k+ words) */
     useInvertedIndex?: boolean;
-    /** Field data for weighted search (e.g., [{ word: 'Apple', fields: { title: 'Apple Inc.' } }]) */
-    fieldData?: Array<{
-        word: string;
-        fields?: Record<string, string>;
-    }>;
+    /** Fields to index for multi-field search (e.g., ['title', 'description']) */
+    fields?: string[];
+    /** Field weights for scoring (e.g., { title: 2.0, description: 1.0 }) */
+    fieldWeights?: Record<string, number>;
 }
 export interface SearchOptions {
     /** Override max results for this search */

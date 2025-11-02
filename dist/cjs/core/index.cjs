@@ -7,6 +7,7 @@ const invertedIndex = require("./inverted-index.cjs");
 const highlighting = require("./highlighting.cjs");
 const cache = require("./cache.cjs");
 const accentNormalization = require("../utils/accent-normalization.cjs");
+const fieldWeighting = require("./field-weighting.cjs");
 function buildFuzzyIndex(words = [], options = {}) {
   const config$1 = config.mergeConfig(options.config);
   config.validateConfig(config$1);
@@ -14,6 +15,11 @@ function buildFuzzyIndex(words = [], options = {}) {
   const languageProcessors = options.languageProcessors || index.LanguageRegistry.getProcessors(config$1.languages);
   if (languageProcessors.length === 0) {
     throw new Error(`No language processors found for: ${config$1.languages.join(", ")}`);
+  }
+  const hasFields = options.fields && options.fields.length > 0;
+  const isObjectArray = words.length > 0 && typeof words[0] === "object" && words[0] !== null;
+  if (isObjectArray && !hasFields) {
+    throw new Error("When indexing objects, you must specify which fields to index via options.fields");
   }
   const index$1 = {
     base: [],
@@ -24,19 +30,44 @@ function buildFuzzyIndex(words = [], options = {}) {
     languageProcessors: /* @__PURE__ */ new Map(),
     config: config$1
   };
+  if (hasFields) {
+    index$1.fields = options.fields;
+    index$1.fieldWeights = fieldWeighting.normalizeFieldWeights(options.fields, options.fieldWeights);
+    index$1.fieldData = /* @__PURE__ */ new Map();
+  }
   languageProcessors.forEach((processor) => {
     index$1.languageProcessors.set(processor.language, processor);
   });
   const processedWords = /* @__PURE__ */ new Set();
   let processed = 0;
-  for (const word of words) {
-    if (!word || word.trim().length < config$1.minQueryLength) continue;
-    const trimmedWord = word.trim();
-    if (processedWords.has(trimmedWord.toLowerCase())) continue;
-    processedWords.add(trimmedWord.toLowerCase());
-    index$1.base.push(trimmedWord);
-    for (const processor of languageProcessors) {
-      processWordWithProcessor(trimmedWord, processor, index$1, config$1, featureSet);
+  for (const item of words) {
+    if (!item) continue;
+    if (hasFields && isObjectArray) {
+      const fieldValues = fieldWeighting.extractFieldValues(item, options.fields);
+      if (!fieldValues) continue;
+      const baseId = Object.values(fieldValues)[0] || `item_${processed}`;
+      index$1.fieldData.set(baseId, fieldValues);
+      for (const [fieldName, fieldValue] of Object.entries(fieldValues)) {
+        if (!fieldValue || fieldValue.trim().length < config$1.minQueryLength) continue;
+        const trimmedValue = fieldValue.trim();
+        if (!processedWords.has(baseId.toLowerCase())) {
+          processedWords.add(baseId.toLowerCase());
+          index$1.base.push(baseId);
+        }
+        for (const processor of languageProcessors) {
+          processWordWithProcessorAndField(trimmedValue, baseId, fieldName, processor, index$1, config$1, featureSet);
+        }
+      }
+    } else {
+      const word = typeof item === "string" ? item : String(item);
+      if (word.trim().length < config$1.minQueryLength) continue;
+      const trimmedWord = word.trim();
+      if (processedWords.has(trimmedWord.toLowerCase())) continue;
+      processedWords.add(trimmedWord.toLowerCase());
+      index$1.base.push(trimmedWord);
+      for (const processor of languageProcessors) {
+        processWordWithProcessor(trimmedWord, processor, index$1, config$1, featureSet);
+      }
     }
     processed++;
     if (options.onProgress) {
@@ -109,6 +140,66 @@ function processWordWithProcessor(word, processor, index2, config2, featureSet) 
     }
   }
 }
+function processWordWithProcessorAndField(fieldValue, baseId, fieldName, processor, index2, config2, featureSet) {
+  const normalized = processor.normalize(fieldValue);
+  addToVariantMapWithField(index2.variantToBase, normalized, baseId);
+  addToVariantMapWithField(index2.variantToBase, fieldValue.toLowerCase(), baseId);
+  addToVariantMapWithField(index2.variantToBase, fieldValue, baseId);
+  const accentFreeWord = accentNormalization.removeAccents(fieldValue);
+  if (accentFreeWord !== fieldValue) {
+    addToVariantMapWithField(index2.variantToBase, accentFreeWord, baseId);
+    addToVariantMapWithField(index2.variantToBase, accentFreeWord.toLowerCase(), baseId);
+    const normalizedAccentFree = processor.normalize(accentFreeWord);
+    if (normalizedAccentFree !== accentFreeWord.toLowerCase()) {
+      addToVariantMapWithField(index2.variantToBase, normalizedAccentFree, baseId);
+    }
+  }
+  if (featureSet.has("partial-words")) {
+    const variants = processor.getWordVariants(fieldValue);
+    variants.forEach((variant) => {
+      addToVariantMapWithField(index2.variantToBase, variant, baseId);
+    });
+  }
+  if (featureSet.has("phonetic") && processor.supportedFeatures.includes("phonetic")) {
+    const phoneticCode = processor.getPhoneticCode(fieldValue);
+    if (phoneticCode) {
+      addToVariantMapWithField(index2.phoneticToBase, phoneticCode, baseId);
+    }
+  }
+  const ngrams = generateNgrams(normalized, config2.ngramSize);
+  ngrams.forEach((ngram) => {
+    addToVariantMapWithField(index2.ngramIndex, ngram, baseId);
+  });
+  if (featureSet.has("compound") && processor.supportedFeatures.includes("compound")) {
+    const parts = processor.splitCompoundWords(fieldValue);
+    parts.forEach((part) => {
+      if (part.length >= config2.minQueryLength) {
+        addToVariantMapWithField(index2.variantToBase, part, baseId);
+        addToVariantMapWithField(index2.variantToBase, processor.normalize(part), baseId);
+      }
+    });
+  }
+  if (featureSet.has("synonyms")) {
+    const synonyms = processor.getSynonyms(normalized);
+    synonyms.forEach((synonym) => {
+      addToVariantMapWithField(index2.synonymMap, synonym, baseId);
+    });
+    if (config2.customSynonyms) {
+      const customSynonyms = config2.customSynonyms[normalized];
+      if (customSynonyms) {
+        customSynonyms.forEach((synonym) => {
+          addToVariantMapWithField(index2.synonymMap, synonym, baseId);
+        });
+      }
+    }
+  }
+}
+function addToVariantMapWithField(map, key, value, _fieldName) {
+  if (!map.has(key)) {
+    map.set(key, /* @__PURE__ */ new Set());
+  }
+  map.get(key).add(value);
+}
 function addToVariantMap(map, key, value) {
   if (!map.has(key)) {
     map.set(key, /* @__PURE__ */ new Set());
@@ -160,7 +251,7 @@ function getSuggestions(index2, query, maxResults, options = {}) {
       findFuzzyMatches(normalizedQuery, index2, matches, processor, config2);
     }
   }
-  const results = Array.from(matches.values()).map((match) => createSuggestionResult(match, query, threshold, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
+  const results = Array.from(matches.values()).map((match) => createSuggestionResult(match, query, threshold, index2, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
   if (index2._cache) {
     index2._cache.set(query, results, limit, options);
   }
@@ -291,8 +382,11 @@ function findFuzzyMatches(query, index2, matches, processor, config2) {
     }
   }
 }
-function createSuggestionResult(match, originalQuery, threshold, options) {
-  const score = calculateMatchScore(match, originalQuery);
+function createSuggestionResult(match, originalQuery, threshold, index2, options) {
+  let score = calculateMatchScore(match, originalQuery);
+  if (match.fieldWeight) {
+    score = Math.min(1, score * match.fieldWeight);
+  }
   if (score < threshold) {
     return null;
   }
@@ -305,6 +399,10 @@ function createSuggestionResult(match, originalQuery, threshold, options) {
     // @ts-ignore - temporary debug property
     _debug_matchType: match.matchType
   };
+  if (index2.fieldData && index2.fieldData.has(match.word)) {
+    result.fields = index2.fieldData.get(match.word);
+    result.field = match.field;
+  }
   if (options?.includeHighlights) {
     result.highlights = highlighting.calculateHighlights(match, originalQuery, match.word);
   }
@@ -361,7 +459,7 @@ function getSuggestionsInverted(index2, query, limit, threshold, processors, opt
     throw new Error("Inverted index not available");
   }
   const matches = invertedIndex.searchInvertedIndex(index2.invertedIndex, index2.documents, query, processors, index2.config);
-  const results = matches.map((match) => createSuggestionResult(match, query, threshold, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
+  const results = matches.map((match) => createSuggestionResult(match, query, threshold, index2, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
   return results;
 }
 exports.batchSearch = batchSearch;

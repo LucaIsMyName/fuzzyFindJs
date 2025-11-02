@@ -1,8 +1,8 @@
 import type { FuzzyIndex, SuggestionResult, BuildIndexOptions, SearchOptions } from "./types.js";
 /**
- * Build a fuzzy search index from a dictionary of words
+ * Build a fuzzy search index from a dictionary of words or objects
  */
-export declare function buildFuzzyIndex(words?: string[], options?: BuildIndexOptions): FuzzyIndex;
+export declare function buildFuzzyIndex(words?: (string | any)[], options?: BuildIndexOptions): FuzzyIndex;
 /**
  * Batch search multiple queries at once
  * Deduplicates identical queries and returns results for all
