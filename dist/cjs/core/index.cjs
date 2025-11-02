@@ -9,6 +9,7 @@ const cache = require("./cache.cjs");
 const accentNormalization = require("../utils/accent-normalization.cjs");
 const fieldWeighting = require("./field-weighting.cjs");
 const stopWords = require("../utils/stop-words.cjs");
+const wordBoundaries = require("../utils/word-boundaries.cjs");
 function buildFuzzyIndex(words = [], options = {}) {
   const config$1 = config.mergeConfig(options.config);
   config.validateConfig(config$1);
@@ -263,9 +264,29 @@ function getSuggestions(index2, query, maxResults, options = {}) {
   return results;
 }
 function findExactMatches(query, index2, matches, language) {
+  const wordBoundaries$1 = index2.config.wordBoundaries || false;
+  if (query.includes("*")) {
+    for (const baseWord of index2.base) {
+      if (wordBoundaries.matchesWildcard(baseWord, query)) {
+        if (!matches.has(baseWord)) {
+          matches.set(baseWord, {
+            word: baseWord,
+            normalized: query,
+            matchType: "exact",
+            editDistance: 0,
+            language
+          });
+        }
+      }
+    }
+    return;
+  }
   const exactMatches = index2.variantToBase.get(query);
   if (exactMatches) {
     exactMatches.forEach((word) => {
+      if (wordBoundaries$1 && !wordBoundaries.matchesWord(word, query, wordBoundaries$1)) {
+        return;
+      }
       const existing = matches.get(word);
       if (!existing || existing.matchType !== "exact") {
         matches.set(word, {
@@ -294,9 +315,13 @@ function findExactMatches(query, index2, matches, language) {
   }
 }
 function findPrefixMatches(query, index2, matches, language) {
+  const wordBoundaries$1 = index2.config.wordBoundaries || false;
   for (const [variant, words] of index2.variantToBase.entries()) {
     if (variant.startsWith(query) && variant !== query) {
       words.forEach((word) => {
+        if (wordBoundaries$1 && !wordBoundaries.matchesWord(word, query, wordBoundaries$1)) {
+          return;
+        }
         if (!matches.has(word)) {
           matches.set(word, {
             word,

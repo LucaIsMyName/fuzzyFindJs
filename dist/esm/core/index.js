@@ -7,6 +7,7 @@ import { SearchCache } from "./cache.js";
 import { removeAccents } from "../utils/accent-normalization.js";
 import { normalizeFieldWeights, extractFieldValues } from "./field-weighting.js";
 import { filterStopWords } from "../utils/stop-words.js";
+import { matchesWildcard, matchesWord } from "../utils/word-boundaries.js";
 function buildFuzzyIndex(words = [], options = {}) {
   const config = mergeConfig(options.config);
   validateConfig(config);
@@ -261,9 +262,29 @@ function getSuggestions(index, query, maxResults, options = {}) {
   return results;
 }
 function findExactMatches(query, index, matches, language) {
+  const wordBoundaries = index.config.wordBoundaries || false;
+  if (query.includes("*")) {
+    for (const baseWord of index.base) {
+      if (matchesWildcard(baseWord, query)) {
+        if (!matches.has(baseWord)) {
+          matches.set(baseWord, {
+            word: baseWord,
+            normalized: query,
+            matchType: "exact",
+            editDistance: 0,
+            language
+          });
+        }
+      }
+    }
+    return;
+  }
   const exactMatches = index.variantToBase.get(query);
   if (exactMatches) {
     exactMatches.forEach((word) => {
+      if (wordBoundaries && !matchesWord(word, query, wordBoundaries)) {
+        return;
+      }
       const existing = matches.get(word);
       if (!existing || existing.matchType !== "exact") {
         matches.set(word, {
@@ -292,9 +313,13 @@ function findExactMatches(query, index, matches, language) {
   }
 }
 function findPrefixMatches(query, index, matches, language) {
+  const wordBoundaries = index.config.wordBoundaries || false;
   for (const [variant, words] of index.variantToBase.entries()) {
     if (variant.startsWith(query) && variant !== query) {
       words.forEach((word) => {
+        if (wordBoundaries && !matchesWord(word, query, wordBoundaries)) {
+          return;
+        }
         if (!matches.has(word)) {
           matches.set(word, {
             word,

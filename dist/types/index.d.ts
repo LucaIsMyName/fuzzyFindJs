@@ -16,6 +16,7 @@ export { SearchCache, LRUCache } from "./core/cache.js";
 export { serializeIndex, deserializeIndex, saveIndexToLocalStorage, loadIndexFromLocalStorage, getSerializedSize } from "./core/serialization.js";
 export { removeAccents, hasAccents, normalizeForComparison, getAccentVariants } from "./utils/accent-normalization.js";
 export { filterStopWords, getStopWordsForLanguages, isStopWord, DEFAULT_STOP_WORDS } from "./utils/stop-words.js";
+export { isWordBoundary, matchesAtWordBoundary, findWordBoundaryMatches, matchesWord, matchesWildcard } from "./utils/word-boundaries.js";
 export { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 export type { FuzzyIndex, FuzzyConfig, SuggestionResult, SearchMatch, MatchType, FuzzyFeature, LanguageProcessor, BuildIndexOptions, SearchOptions, DebugInfo, SuggestionResultWithDebug } from "./core/types.js";
 export { LanguageRegistry, GermanProcessor, EnglishProcessor, SpanishProcessor, FrenchProcessor, BaseLanguageProcessor } from "./languages/index.js";

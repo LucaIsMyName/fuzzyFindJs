@@ -5,6 +5,7 @@ import { LRUCache, SearchCache } from "./core/cache.js";
 import { deserializeIndex, getSerializedSize, loadIndexFromLocalStorage, saveIndexToLocalStorage, serializeIndex } from "./core/serialization.js";
 import { getAccentVariants, hasAccents, normalizeForComparison, removeAccents } from "./utils/accent-normalization.js";
 import { DEFAULT_STOP_WORDS, filterStopWords, getStopWordsForLanguages, isStopWord } from "./utils/stop-words.js";
+import { findWordBoundaryMatches, isWordBoundary, matchesAtWordBoundary, matchesWildcard, matchesWord } from "./utils/word-boundaries.js";
 import { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 import { LanguageRegistry } from "./languages/index.js";
 import { areStringsSimilar, calculateDamerauLevenshteinDistance, calculateLevenshteinDistance, calculateNgramSimilarity, distanceToSimilarity } from "./algorithms/levenshtein.js";
@@ -51,6 +52,7 @@ export {
   deserializeIndex,
   distanceToSimilarity,
   filterStopWords,
+  findWordBoundaryMatches,
   formatHighlightedHTML,
   getAccentVariants,
   getSerializedSize,
@@ -58,7 +60,11 @@ export {
   getSuggestions,
   hasAccents,
   isStopWord,
+  isWordBoundary,
   loadIndexFromLocalStorage,
+  matchesAtWordBoundary,
+  matchesWildcard,
+  matchesWord,
   mergeConfig,
   normalizeForComparison,
   removeAccents,

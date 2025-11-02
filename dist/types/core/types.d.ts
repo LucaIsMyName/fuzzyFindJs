@@ -89,6 +89,8 @@ export interface FuzzyConfig {
     stopWords?: string[];
     /** Enable automatic stop word filtering (default: false) */
     enableStopWords?: boolean;
+    /** Enable word boundary matching for more precise results (default: false) */
+    wordBoundaries?: boolean;
 }
 export type FuzzyFeature = "phonetic" | "compound" | "synonyms" | "keyboard-neighbors" | "partial-words" | "missing-letters" | "extra-letters" | "transpositions";
 export interface LanguageProcessor {

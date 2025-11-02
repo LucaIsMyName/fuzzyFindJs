@@ -8,6 +8,7 @@ import { SearchCache } from "./cache.js";
 import { removeAccents } from "../utils/accent-normalization.js";
 import { extractFieldValues, normalizeFieldWeights } from "./field-weighting.js";
 import { filterStopWords } from "../utils/stop-words.js";
+import { matchesWord, matchesWildcard } from "../utils/word-boundaries.js";
 
 /**
  * Build a fuzzy search index from a dictionary of words or objects
@@ -27,11 +28,11 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
 
   // Check if we're doing multi-field search
   const hasFields = options.fields && options.fields.length > 0;
-  const isObjectArray = words.length > 0 && typeof words[0] === 'object' && words[0] !== null;
+  const isObjectArray = words.length > 0 && typeof words[0] === "object" && words[0] !== null;
 
   // Validate: if objects are provided, fields must be specified
   if (isObjectArray && !hasFields) {
-    throw new Error('When indexing objects, you must specify which fields to index via options.fields');
+    throw new Error("When indexing objects, you must specify which fields to index via options.fields");
   }
 
   const index: FuzzyIndex = {
@@ -69,7 +70,7 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
 
       // Generate a unique ID for this object (use first field value as base)
       const baseId = Object.values(fieldValues)[0] || `item_${processed}`;
-      
+
       // Store field data
       index.fieldData!.set(baseId, fieldValues);
 
@@ -78,7 +79,7 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
         if (!fieldValue || fieldValue.trim().length < config.minQueryLength) continue;
 
         const trimmedValue = fieldValue.trim();
-        
+
         // Add to base if not already there
         if (!processedWords.has(baseId.toLowerCase())) {
           processedWords.add(baseId.toLowerCase());
@@ -92,7 +93,7 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
       }
     } else {
       // Handle simple string array (backwards compatible)
-      const word = typeof item === 'string' ? item : String(item);
+      const word = typeof item === "string" ? item : String(item);
       if (word.trim().length < config.minQueryLength) continue;
 
       const trimmedWord = word.trim();
@@ -143,7 +144,7 @@ function processWordWithProcessor(word: string, processor: LanguageProcessor, in
   addToVariantMap(index.variantToBase, word.toLowerCase(), word);
   // Also add the original word as-is for exact matching
   addToVariantMap(index.variantToBase, word, word);
-  
+
   // Add accent-insensitive variants
   const accentFreeWord = removeAccents(word);
   if (accentFreeWord !== word) {
@@ -210,22 +211,14 @@ function processWordWithProcessor(word: string, processor: LanguageProcessor, in
 /**
  * Process a word with field information for multi-field search
  */
-function processWordWithProcessorAndField(
-  fieldValue: string,
-  baseId: string,
-  fieldName: string,
-  processor: LanguageProcessor,
-  index: FuzzyIndex,
-  config: FuzzyConfig,
-  featureSet: Set<string>
-): void {
+function processWordWithProcessorAndField(fieldValue: string, baseId: string, fieldName: string, processor: LanguageProcessor, index: FuzzyIndex, config: FuzzyConfig, featureSet: Set<string>): void {
   const normalized = processor.normalize(fieldValue);
-  
+
   // Add base word mapping with field metadata
   addToVariantMapWithField(index.variantToBase, normalized, baseId, fieldName);
   addToVariantMapWithField(index.variantToBase, fieldValue.toLowerCase(), baseId, fieldName);
   addToVariantMapWithField(index.variantToBase, fieldValue, baseId, fieldName);
-  
+
   // Add accent-insensitive variants
   const accentFreeWord = removeAccents(fieldValue);
   if (accentFreeWord !== fieldValue) {
@@ -316,12 +309,7 @@ function addToVariantMap(map: Map<string, Set<string>>, key: string, value: stri
  * Batch search multiple queries at once
  * Deduplicates identical queries and returns results for all
  */
-export function batchSearch(
-  index: FuzzyIndex,
-  queries: string[],
-  maxResults?: number,
-  options: SearchOptions = {}
-): Record<string, SuggestionResult[]> {
+export function batchSearch(index: FuzzyIndex, queries: string[], maxResults?: number, options: SearchOptions = {}): Record<string, SuggestionResult[]> {
   const results: Record<string, SuggestionResult[]> = {};
   const uniqueQueries = [...new Set(queries)]; // Deduplicate
 
@@ -415,10 +403,36 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
  * Find exact matches
  */
 function findExactMatches(query: string, index: FuzzyIndex, matches: Map<string, SearchMatch>, language: string): void {
+  const wordBoundaries = index.config.wordBoundaries || false;
+  
+  // Check for wildcard pattern
+  if (query.includes('*')) {
+    // Wildcard search
+    for (const baseWord of index.base) {
+      if (matchesWildcard(baseWord, query)) {
+        if (!matches.has(baseWord)) {
+          matches.set(baseWord, {
+            word: baseWord,
+            normalized: query,
+            matchType: "exact",
+            editDistance: 0,
+            language,
+          });
+        }
+      }
+    }
+    return;
+  }
+  
   // Check for exact matches in the variant map
   const exactMatches = index.variantToBase.get(query);
   if (exactMatches) {
     exactMatches.forEach((word) => {
+      // With word boundaries, verify the match
+      if (wordBoundaries && !matchesWord(word, query, wordBoundaries)) {
+        return;
+      }
+      
       // Always add exact matches, even if already found with lower score
       const existing = matches.get(word);
       if (!existing || existing.matchType !== "exact") {
@@ -454,9 +468,16 @@ function findExactMatches(query: string, index: FuzzyIndex, matches: Map<string,
  * Find prefix matches
  */
 function findPrefixMatches(query: string, index: FuzzyIndex, matches: Map<string, SearchMatch>, language: string): void {
+  const wordBoundaries = index.config.wordBoundaries || false;
+  
   for (const [variant, words] of index.variantToBase.entries()) {
     if (variant.startsWith(query) && variant !== query) {
       words.forEach((word) => {
+        // With word boundaries, verify the match
+        if (wordBoundaries && !matchesWord(word, query, wordBoundaries)) {
+          return;
+        }
+        
         if (!matches.has(word)) {
           matches.set(word, {
             word,
@@ -574,15 +595,9 @@ function findFuzzyMatches(query: string, index: FuzzyIndex, matches: Map<string,
 /**
  * Create a suggestion result from a search match
  */
-function createSuggestionResult(
-  match: SearchMatch,
-  originalQuery: string,
-  threshold: number,
-  index: FuzzyIndex,
-  options?: SearchOptions
-): SuggestionResult | null {
+function createSuggestionResult(match: SearchMatch, originalQuery: string, threshold: number, index: FuzzyIndex, options?: SearchOptions): SuggestionResult | null {
   let score = calculateMatchScore(match, originalQuery);
-  
+
   // Apply field weight if present
   if (match.fieldWeight) {
     score = Math.min(1.0, score * match.fieldWeight);
@@ -619,7 +634,11 @@ function createSuggestionResult(
 /**
  * Calculate match score (0-1, higher is better)
  */
-function calculateMatchScore(match: SearchMatch, query: string): number {
+function calculateMatchScore(
+  //
+  match: SearchMatch,
+  query: string
+): number {
   const queryLen = query.length;
   const wordLen = match.word.length;
   const maxLen = Math.max(queryLen, wordLen);
@@ -667,7 +686,11 @@ function calculateMatchScore(match: SearchMatch, query: string): number {
 /**
  * Generate n-grams from a string
  */
-function generateNgrams(str: string, n: number): string[] {
+function generateNgrams(
+  //
+  str: string,
+  n: number
+): string[] {
   if (str.length < n) return [str];
 
   const ngrams: string[] = [];
@@ -682,6 +705,7 @@ function generateNgrams(str: string, n: number): string[] {
  * This is a wrapper that converts inverted index results to the same format
  */
 function getSuggestionsInverted(
+  //
   index: FuzzyIndex,
   query: string,
   limit: number,

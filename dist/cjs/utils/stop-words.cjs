@@ -142,8 +142,8 @@ const DEFAULT_STOP_WORDS = {
 };
 function filterStopWords(query, stopWords) {
   const stopWordsSet = stopWords instanceof Set ? stopWords : new Set(stopWords.map((w) => w.toLowerCase()));
-  const words = query.toLowerCase().split(/\s+/);
-  const filtered = words.filter((word) => !stopWordsSet.has(word));
+  const words = query.split(/\s+/);
+  const filtered = words.filter((word) => !stopWordsSet.has(word.toLowerCase()));
   if (filtered.length === 0) {
     return query;
   }

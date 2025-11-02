@@ -22,6 +22,7 @@ A powerful, multi-language optimized fuzzy search library with phonetic matching
 - 🌍 **Accent Normalization**: Automatic handling of accented characters (café ↔ cafe)
 - ⚖️ **Field Weighting**: Multi-field search with weighted scoring (title > description)
 - 🚫 **Stop Words Filtering**: Remove common words (the, a, an) for better search quality
+- 📍 **Word Boundaries**: Precise matching with wildcard support (cat* matches category)
 - 🎯 **Typo Tolerant**: Handles missing letters, extra letters, transpositions, keyboard neighbors
 - 🔤 **N-gram Matching**: Fast partial substring matching
 - 📊 **Configurable Scoring**: Customizable thresholds and edit distances
@@ -1097,7 +1098,7 @@ function search(query) {
 { fuzzyThreshold: 0.6 }
 ```
 
-### 5. Inverted Index for Large Datasets (NEW!)
+### 5. Inverted Index for Large Datasets 
 
 The library automatically uses an **inverted index** for datasets with 10,000+ words, providing 10-100x performance improvement:
 
@@ -1122,16 +1123,16 @@ const index = buildFuzzyIndex(dictionary, {
 
 **Performance comparison:**
 
-| Dataset Size | Classic Index | Inverted Index | Speedup |
-|--------------|---------------|----------------|---------|
-| 1,000 words  | 1ms          | 1ms            | 1x      |
-| 10,000 words | 5ms          | 2ms            | 2.5x    |
-| 100,000 words| 50ms         | 5ms            | **10x** |
-| 1,000,000 words | 500ms     | 10ms           | **50x** |
+| Dataset Size    | Classic Index | Inverted Index | Speedup |
+| --------------- | ------------- | -------------- | ------- |
+| 1,000 words     | 1ms           | 1ms            | 1x      |
+| 10,000 words    | 5ms           | 2ms            | 2.5x    |
+| 100,000 words   | 50ms          | 5ms            | **10x** |
+| 1,000,000 words | 500ms         | 10ms           | **50x** |
 
 **No code changes required** - the library automatically detects and uses the optimal index structure!
 
-### 6. Match Highlighting (NEW!)
+### 6. Match Highlighting 
 
 Get exact positions of matched characters for UI highlighting:
 
@@ -1156,7 +1157,7 @@ const html = formatHighlightedHTML(results[0].display, results[0].highlights);
 - Autocomplete UI
 - Showing users WHY something matched
 
-### 7. Search Result Caching (NEW!)
+### 7. Search Result Caching 
 
 Automatic LRU cache for 10-100x faster repeated queries:
 
@@ -1190,7 +1191,7 @@ const index = buildFuzzyIndex(dictionary, {
 - Search-as-you-type
 - Repeated queries
 
-### 8. Index Serialization (NEW!)
+### 8. Index Serialization 
 
 Save and load indices for 100x faster startup:
 
@@ -1225,7 +1226,7 @@ console.log(`Index size: ${(sizeInBytes / 1024).toFixed(2)} KB`);
 - Deserialization: ~5ms
 - **50-100x faster** than rebuilding!
 
-### 9. Batch Search API (NEW!)
+### 9. Batch Search API 
 
 Search multiple queries at once with automatic deduplication:
 
@@ -1266,7 +1267,7 @@ const formResults = batchSearch(index, [
 - Server-side batch queries
 - Deduplicating search requests
 
-### 10. Accent Normalization (NEW!)
+### 10. Accent Normalization 
 
 Automatic handling of accented characters for international support:
 
@@ -1383,7 +1384,7 @@ const results = getSuggestions(index, 'typescript');
 // "TypeScript Guide" ranks first (title match with 3x weight)
 ```
 
-### 12. Stop Words Filtering (NEW!)
+### 12. Stop Words Filtering
 
 Filter common words that add noise to search results:
 
@@ -1444,6 +1445,71 @@ filterStopWords('the quick brown fox', ['the', 'a']);
 // Check if a word is a stop word
 isStopWord('the', DEFAULT_STOP_WORDS.english);
 // → true
+```
+
+### 13. Word Boundaries 
+
+Precise matching with word boundary detection and wildcard support:
+
+```typescript
+import { buildFuzzyIndex, getSuggestions } from 'fuzzyfindjs';
+
+// Enable word boundaries for more precise results
+const index = buildFuzzyIndex(dictionary, {
+  config: {
+    wordBoundaries: true
+  }
+});
+
+// Without word boundaries (default)
+const index1 = buildFuzzyIndex(['cat', 'category', 'scatter', 'concatenate']);
+getSuggestions(index1, 'cat');
+// Matches: "cat", "category", "scatter", "concatenate" (all contain 'cat')
+
+// With word boundaries
+const index2 = buildFuzzyIndex(['cat', 'category', 'scatter', 'concatenate'], {
+  config: { wordBoundaries: true }
+});
+getSuggestions(index2, 'cat');
+// Matches: "cat", "category" (starts with 'cat')
+// Doesn't match: "scatter", "concatenate" (cat in middle)
+
+// Wildcard support
+getSuggestions(index, 'cat*');
+// Matches: "cat", "cats", "category"
+
+getSuggestions(index, 'app*tion');
+// Matches: "application", "appreciation"
+```
+
+**Benefits:**
+- ✅ **More Precise** - Reduce false positives
+- ✅ **Wildcard Support** - Flexible pattern matching with `*`
+- ✅ **User Control** - Choose exact vs substring matching
+- ✅ **Professional** - Standard search engine behavior
+- ✅ **Backwards Compatible** - Disabled by default
+
+**Use Cases:**
+- 🔍 **Exact Search**: Find "cat" without matching "scatter"
+- 📝 **Autocomplete**: Match word prefixes only
+- 🎯 **Pattern Matching**: Use wildcards for flexible queries
+- 📚 **Dictionary Search**: Match whole words only
+
+**Manual Boundary Checking:**
+```typescript
+import { isWordBoundary, matchesAtWordBoundary, matchesWildcard } from 'fuzzyfindjs';
+
+// Check if position is at word boundary
+isWordBoundary('hello world', 6); // → true (after space)
+isWordBoundary('hello', 2);       // → false (middle of word)
+
+// Check if match is at word boundary
+matchesAtWordBoundary('the cat sat', 4, 3); // → true ('cat')
+matchesAtWordBoundary('scatter', 1, 3);     // → false ('cat' in middle)
+
+// Wildcard matching
+matchesWildcard('category', 'cat*');     // → true
+matchesWildcard('application', 'app*');  // → true
 ```
 
 ## 🧪 Algorithm Details

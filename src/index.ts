@@ -30,6 +30,9 @@ export { removeAccents, hasAccents, normalizeForComparison, getAccentVariants } 
 // Stop words utilities
 export { filterStopWords, getStopWordsForLanguages, isStopWord, DEFAULT_STOP_WORDS } from "./utils/stop-words.js";
 
+// Word boundary utilities
+export { isWordBoundary, matchesAtWordBoundary, findWordBoundaryMatches, matchesWord, matchesWildcard } from "./utils/word-boundaries.js";
+
 // Configuration
 export { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 
