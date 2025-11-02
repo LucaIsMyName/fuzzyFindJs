@@ -4,11 +4,12 @@
  */
 /**
  * Remove accents and diacritics from a string
- * Uses both custom mapping and Unicode normalization
+ * Uses both custom mapping and Unicode normalization with caching
  */
 export declare function removeAccents(text: string): string;
 /**
  * Check if a string contains any accented characters
+ * Optimized with early return
  */
 export declare function hasAccents(text: string): boolean;
 /**

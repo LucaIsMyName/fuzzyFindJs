@@ -181,14 +181,27 @@ const ACCENT_MAP = {
   þ: "th",
   Þ: "TH"
 };
+const accentCache = /* @__PURE__ */ new Map();
+const MAX_CACHE_SIZE = 1e4;
 function removeAccents(text) {
   if (!text) return text;
-  let result = "";
+  const cached = accentCache.get(text);
+  if (cached !== void 0) {
+    return cached;
+  }
+  const chars = [];
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
-    result += ACCENT_MAP[char] || char;
+    chars.push(ACCENT_MAP[char] || char);
   }
+  let result = chars.join("");
   result = result.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (accentCache.size < MAX_CACHE_SIZE) {
+    accentCache.set(text, result);
+  } else if (accentCache.size === MAX_CACHE_SIZE) {
+    accentCache.clear();
+    accentCache.set(text, result);
+  }
   return result;
 }
 function hasAccents(text) {
@@ -198,8 +211,7 @@ function hasAccents(text) {
       return true;
     }
   }
-  const normalized = text.normalize("NFD");
-  return /[\u0300-\u036f]/.test(normalized);
+  return /[\u0300-\u036f]/.test(text.normalize("NFD"));
 }
 function normalizeForComparison(text) {
   return removeAccents(text.toLowerCase());

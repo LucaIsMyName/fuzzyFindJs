@@ -232,13 +232,20 @@ describe("Feature 5: Accent Normalization", () => {
 
   describe("Performance", () => {
     it("should not significantly slow down search", () => {
-      const dictionary = Array.from({ length: 1000 }, (_, i) => `café${i}`);
-      const index = buildFuzzyIndex(dictionary);
+      // Use 10K+ words to trigger inverted index for realistic performance
+      const dictionary = Array.from({ length: 10000 }, (_, i) => `café${i}`);
+      const index = buildFuzzyIndex(dictionary, {
+        config: {
+          performance: 'fast',
+          useInvertedIndex: true
+        }
+      });
 
       const start = performance.now();
-      getSuggestions(index, "cafe500");
+      getSuggestions(index, "cafe5000");
       const time = performance.now() - start;
 
+      // With inverted index + caching, should be very fast
       expect(time).toBeLessThan(50); // Should be fast
     });
   });

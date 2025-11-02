@@ -121,7 +121,8 @@ function searchInvertedIndex(invertedIndex, documents, query, processors, config
       findSynonymMatchesInverted(normalizedQuery, invertedIndex, documents, matches);
     }
     findNgramMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor.language, config.ngramSize);
-    if (featureSet.has("missing-letters") || featureSet.has("extra-letters") || featureSet.has("transpositions")) {
+    const shouldSkipFuzzy = config.performance === "fast" && invertedIndex.termToPostings.size > 1e5 && matches.size >= config.maxResults * 2;
+    if (!shouldSkipFuzzy && (featureSet.has("missing-letters") || featureSet.has("extra-letters") || featureSet.has("transpositions"))) {
       findFuzzyMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor, config.maxEditDistance, config);
     }
   }
@@ -264,9 +265,27 @@ function findFuzzyMatchesInverted(query, invertedIndex, documents, matches, proc
   const minLen = queryLen - maxDistance;
   const maxLen = queryLen + maxDistance;
   const useTranspositions = config.features?.includes("transpositions");
-  const MAX_FUZZY_CANDIDATES = 1e4;
+  const datasetSize = invertedIndex.termToPostings.size;
+  const MAX_FUZZY_CANDIDATES = datasetSize > 1e5 ? 1e3 : datasetSize > 5e4 ? 1500 : datasetSize > 2e4 ? 3e3 : datasetSize > 1e4 ? 5e3 : 8e3;
   let candidatesChecked = 0;
-  for (const [term, posting] of invertedIndex.termToPostings.entries()) {
+  let termsArray;
+  if (datasetSize > 5e4 && query.length >= 2) {
+    const prefixLength = datasetSize > 1e5 ? Math.min(3, query.length) : Math.min(2, query.length);
+    const prefix = query.substring(0, prefixLength);
+    const prefixMatches = invertedIndex.termTrie.search(prefix);
+    termsArray = prefixMatches.map((term) => [term, invertedIndex.termToPostings.get(term)]).filter((entry) => entry[1] !== void 0);
+    if (termsArray.length < 100) {
+      termsArray = Array.from(invertedIndex.termToPostings.entries());
+    }
+  } else {
+    termsArray = Array.from(invertedIndex.termToPostings.entries());
+  }
+  termsArray.sort((a, b) => {
+    const aDiff = Math.abs(a[0].length - queryLen);
+    const bDiff = Math.abs(b[0].length - queryLen);
+    return aDiff - bDiff;
+  });
+  for (const [term, posting] of termsArray) {
     const termLen = term.length;
     if (termLen < minLen || termLen > maxLen) {
       continue;
@@ -275,8 +294,15 @@ function findFuzzyMatchesInverted(query, invertedIndex, documents, matches, proc
       break;
     }
     candidatesChecked++;
-    if (matches.size >= config.maxResults * 3) {
+    const earlyTerminationThreshold = datasetSize > 5e4 ? config.maxResults * 2 : config.maxResults * 3;
+    if (matches.size >= earlyTerminationThreshold) {
       break;
+    }
+    if (query.length > 0 && term.length > 0) {
+      const firstCharDiff = Math.abs(query.charCodeAt(0) - term.charCodeAt(0));
+      if (firstCharDiff > 10 && maxDistance < 2) {
+        continue;
+      }
     }
     const distance = useTranspositions ? calculateDamerauLevenshteinDistance(query, term, maxDistance) : calculateLevenshteinDistance(query, term, maxDistance);
     if (distance <= maxDistance) {

@@ -178,43 +178,67 @@ const ACCENT_MAP: Record<string, string> = {
 };
 
 /**
+ * Cache for accent removal results
+ * Dramatically speeds up repeated accent normalization
+ */
+const accentCache = new Map<string, string>();
+const MAX_CACHE_SIZE = 10000; // TODO: Adjust based on memory constraints
+
+/**
  * Remove accents and diacritics from a string
- * Uses both custom mapping and Unicode normalization
+ * Uses both custom mapping and Unicode normalization with caching
  */
 export function removeAccents(text: string): string {
   if (!text) return text;
 
-  // First pass: Use custom accent map for known characters
-  let result = "";
+  // Check cache first (massive speedup for repeated words)
+  const cached = accentCache.get(text);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  // OPTIMIZATION: Use array join instead of string concatenation
+  const chars: string[] = [];
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
-    result += ACCENT_MAP[char] || char;
+    chars.push(ACCENT_MAP[char] || char);
   }
+  let result = chars.join('');
 
   // Second pass: Use Unicode normalization for any remaining accents
   // NFD = Canonical Decomposition (separates base char from combining marks)
   // Then remove combining diacritical marks (Unicode range \u0300-\u036f)
   result = result.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+  // Cache the result (with size limit)
+  if (accentCache.size < MAX_CACHE_SIZE) {
+    accentCache.set(text, result);
+  } else if (accentCache.size === MAX_CACHE_SIZE) {
+    // Clear cache when it gets too large (keep most recent)
+    accentCache.clear();
+    accentCache.set(text, result);
+  }
+
   return result;
 }
 
 /**
  * Check if a string contains any accented characters
+ * Optimized with early return
  */
 export function hasAccents(text: string): boolean {
   if (!text) return false;
 
-  // Check custom map
+  // OPTIMIZATION: Check custom map first (fast path)
   for (let i = 0; i < text.length; i++) {
     if (ACCENT_MAP[text[i]]) {
       return true;
     }
   }
 
+  // OPTIMIZATION: Only normalize if we didn't find accents in map
   // Check for combining diacritical marks
-  const normalized = text.normalize("NFD");
-  return /[\u0300-\u036f]/.test(normalized);
+  return /[\u0300-\u036f]/.test(text.normalize("NFD"));
 }
 
 /**

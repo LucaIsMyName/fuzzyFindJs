@@ -198,7 +198,12 @@ export function searchInvertedIndex(invertedIndex: InvertedIndex, documents: Doc
     findNgramMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor.language, config.ngramSize);
 
     // 6. Fuzzy matches (most expensive, do last)
-    if (featureSet.has("missing-letters") || featureSet.has("extra-letters") || featureSet.has("transpositions")) {
+    // OPTIMIZATION: Skip fuzzy matching for very large datasets in fast mode if we have enough good matches
+    const shouldSkipFuzzy = config.performance === 'fast' && 
+                           invertedIndex.termToPostings.size > 100000 && 
+                           matches.size >= config.maxResults * 2;
+    
+    if (!shouldSkipFuzzy && (featureSet.has("missing-letters") || featureSet.has("extra-letters") || featureSet.has("transpositions"))) {
       findFuzzyMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor, config.maxEditDistance, config);
     }
   }
@@ -401,9 +406,10 @@ function findFuzzyMatchesInverted(query: string, invertedIndex: InvertedIndex, d
   // OPTIMIZATION: Dynamic candidate limit based on dataset size
   // Smaller limit for larger datasets to maintain sub-10ms performance
   const datasetSize = invertedIndex.termToPostings.size;
-  const MAX_FUZZY_CANDIDATES = datasetSize > 50000 ? 2000 : 
-                               datasetSize > 20000 ? 5000 : 
-                               datasetSize > 10000 ? 8000 : 10000;
+  const MAX_FUZZY_CANDIDATES = datasetSize > 100000 ? 1000 :
+                               datasetSize > 50000 ? 1500 : 
+                               datasetSize > 20000 ? 3000 : 
+                               datasetSize > 10000 ? 5000 : 8000;
   let candidatesChecked = 0;
   
   // OPTIMIZATION: For very large datasets (50K+), use Trie prefix filtering first
@@ -411,7 +417,8 @@ function findFuzzyMatchesInverted(query: string, invertedIndex: InvertedIndex, d
   
   if (datasetSize > 50000 && query.length >= 2) {
     // Get prefix matches from Trie (much faster than iterating all terms)
-    const prefixLength = Math.min(2, query.length);
+    // Use longer prefix for 100K+ datasets for better filtering
+    const prefixLength = datasetSize > 100000 ? Math.min(3, query.length) : Math.min(2, query.length);
     const prefix = query.substring(0, prefixLength);
     const prefixMatches = invertedIndex.termTrie.search(prefix);
     
