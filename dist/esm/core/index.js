@@ -1,6 +1,9 @@
 import { mergeConfig, validateConfig } from "./config.js";
 import { LanguageRegistry } from "../languages/index.js";
 import { calculateLevenshteinDistance, calculateNgramSimilarity } from "../algorithms/levenshtein.js";
+import { buildInvertedIndex, searchInvertedIndex } from "./inverted-index.js";
+import { calculateHighlights } from "./highlighting.js";
+import { SearchCache } from "./cache.js";
 function buildFuzzyIndex(words = [], options = {}) {
   const config = mergeConfig(options.config);
   validateConfig(config);
@@ -36,6 +39,17 @@ function buildFuzzyIndex(words = [], options = {}) {
     if (options.onProgress) {
       options.onProgress(processed, words.length);
     }
+  }
+  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || words.length >= 1e4;
+  if (shouldUseInvertedIndex) {
+    const { invertedIndex, documents } = buildInvertedIndex(words, languageProcessors, config, featureSet);
+    index.invertedIndex = invertedIndex;
+    index.documents = documents;
+  }
+  const enableCache = config.enableCache !== false;
+  if (enableCache) {
+    const cacheSize = config.cacheSize || 100;
+    index._cache = new SearchCache(cacheSize);
   }
   return index;
 }
@@ -96,12 +110,25 @@ function getSuggestions(index, query, maxResults, options = {}) {
   if (!query || query.trim().length < config.minQueryLength) {
     return [];
   }
-  const matches = /* @__PURE__ */ new Map();
+  if (index._cache) {
+    const cached = index._cache.get(query, limit, options);
+    if (cached) {
+      return cached;
+    }
+  }
   const activeLanguages = options.languages || config.languages;
   const processors = activeLanguages.map((lang) => index.languageProcessors.get(lang)).filter((p) => p !== void 0);
   if (processors.length === 0) {
     return [];
   }
+  if (index.invertedIndex && index.documents) {
+    const results2 = getSuggestionsInverted(index, query, limit, threshold, processors, options);
+    if (index._cache) {
+      index._cache.set(query, results2, limit, options);
+    }
+    return results2;
+  }
+  const matches = /* @__PURE__ */ new Map();
   for (const processor of processors) {
     const normalizedQuery = processor.normalize(query.trim());
     findExactMatches(normalizedQuery, index, matches, processor.language);
@@ -113,7 +140,10 @@ function getSuggestions(index, query, maxResults, options = {}) {
       findFuzzyMatches(normalizedQuery, index, matches, processor, config);
     }
   }
-  const results = Array.from(matches.values()).map((match) => createSuggestionResult(match, query, threshold)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
+  const results = Array.from(matches.values()).map((match) => createSuggestionResult(match, query, threshold, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
+  if (index._cache) {
+    index._cache.set(query, results, limit, options);
+  }
   return results;
 }
 function findExactMatches(query, index, matches, language) {
@@ -240,12 +270,12 @@ function findFuzzyMatches(query, index, matches, processor, config) {
     }
   }
 }
-function createSuggestionResult(match, originalQuery, threshold) {
+function createSuggestionResult(match, originalQuery, threshold, options) {
   const score = calculateMatchScore(match, originalQuery);
   if (score < threshold) {
     return null;
   }
-  return {
+  const result = {
     display: match.word,
     baseWord: match.word,
     isSynonym: match.matchType === "synonym",
@@ -254,6 +284,10 @@ function createSuggestionResult(match, originalQuery, threshold) {
     // @ts-ignore - temporary debug property
     _debug_matchType: match.matchType
   };
+  if (options?.includeHighlights) {
+    result.highlights = calculateHighlights(match, originalQuery, match.word);
+  }
+  return result;
 }
 function calculateMatchScore(match, query) {
   const queryLen = query.length;
@@ -300,6 +334,14 @@ function generateNgrams(str, n) {
     ngrams.push(str.slice(i, i + n));
   }
   return ngrams;
+}
+function getSuggestionsInverted(index, query, limit, threshold, processors, options) {
+  if (!index.invertedIndex || !index.documents) {
+    throw new Error("Inverted index not available");
+  }
+  const matches = searchInvertedIndex(index.invertedIndex, index.documents, query, processors, index.config);
+  const results = matches.map((match) => createSuggestionResult(match, query, threshold, options)).filter((result) => result !== null).sort((a, b) => b.score - a.score).slice(0, limit);
+  return results;
 }
 export {
   buildFuzzyIndex,

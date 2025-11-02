@@ -72,7 +72,15 @@ class BaseLanguageProcessor {
    * Get common word endings for this language (override for language-specific endings)
    */
   getCommonEndings() {
-    return ["s", "es", "ed", "ing", "er", "est"];
+    return [
+      //
+      "s",
+      "es",
+      "ed",
+      "ing",
+      "er",
+      "est"
+    ];
   }
   /**
    * Default synonym lookup (override to provide language-specific synonyms)

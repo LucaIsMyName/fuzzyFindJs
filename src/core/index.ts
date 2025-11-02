@@ -1,32 +1,10 @@
-import type {
-  //
-  FuzzyIndex,
-  FuzzyConfig,
-  SuggestionResult,
-  SearchMatch,
-  BuildIndexOptions,
-  SearchOptions,
-  LanguageProcessor,
-} from "./types.js";
-import {
-  //
-  mergeConfig,
-  validateConfig,
-} from "./config.js";
-import {
-  //
-  LanguageRegistry,
-} from "../languages/index.js";
-import {
-  //
-  calculateLevenshteinDistance,
-  calculateNgramSimilarity,
-} from "../algorithms/levenshtein.js";
-import {
-  //
-  buildInvertedIndex,
-  searchInvertedIndex,
-} from "./inverted-index.js";
+import type { FuzzyIndex, FuzzyConfig, SuggestionResult, SearchMatch, BuildIndexOptions, SearchOptions, LanguageProcessor } from "./types.js";
+import { mergeConfig, validateConfig } from "./config.js";
+import { LanguageRegistry } from "../languages/index.js";
+import { calculateLevenshteinDistance, calculateNgramSimilarity } from "../algorithms/levenshtein.js";
+import { buildInvertedIndex, searchInvertedIndex } from "./inverted-index.js";
+import { calculateHighlights } from "./highlighting.js";
+import { SearchCache } from "./cache.js";
 
 /**
  * Build a fuzzy search index from a dictionary of words
@@ -89,6 +67,13 @@ export function buildFuzzyIndex(words: string[] = [], options: BuildIndexOptions
     const { invertedIndex, documents } = buildInvertedIndex(words, languageProcessors, config, featureSet);
     index.invertedIndex = invertedIndex;
     index.documents = documents;
+  }
+
+  // CACHE: Initialize search result cache if enabled (default: true)
+  const enableCache = config.enableCache !== false; // Default to true
+  if (enableCache) {
+    const cacheSize = config.cacheSize || 100;
+    index._cache = new SearchCache(cacheSize);
   }
 
   return index;
@@ -180,6 +165,14 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
     return [];
   }
 
+  // CACHE: Check cache first
+  if (index._cache) {
+    const cached = index._cache.get(query, limit, options);
+    if (cached) {
+      return cached; // Cache hit - return immediately!
+    }
+  }
+
   // Get active language processors
   const activeLanguages = options.languages || config.languages;
   const processors = activeLanguages.map((lang) => index.languageProcessors.get(lang)).filter((p): p is LanguageProcessor => p !== undefined);
@@ -190,7 +183,12 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
 
   // AUTO-DETECTION: Use inverted index if available
   if (index.invertedIndex && index.documents) {
-    return getSuggestionsInverted(index, query, limit, threshold, processors);
+    const results = getSuggestionsInverted(index, query, limit, threshold, processors, options);
+    // Cache the results
+    if (index._cache) {
+      index._cache.set(query, results, limit, options);
+    }
+    return results;
   }
 
   // CLASSIC: Use hash-based approach (existing implementation)
@@ -214,10 +212,15 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
 
   // Convert matches to results and rank them
   const results = Array.from(matches.values())
-    .map((match) => createSuggestionResult(match, query, threshold))
+    .map((match) => createSuggestionResult(match, query, threshold, options))
     .filter((result): result is SuggestionResult => result !== null)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
+
+  // Cache the results
+  if (index._cache) {
+    index._cache.set(query, results, limit, options);
+  }
 
   return results;
 }
@@ -382,14 +385,19 @@ function findFuzzyMatches(query: string, index: FuzzyIndex, matches: Map<string,
 /**
  * Create a suggestion result from a search match
  */
-function createSuggestionResult(match: SearchMatch, originalQuery: string, threshold: number): SuggestionResult | null {
+function createSuggestionResult(
+  match: SearchMatch,
+  originalQuery: string,
+  threshold: number,
+  options?: SearchOptions
+): SuggestionResult | null {
   const score = calculateMatchScore(match, originalQuery);
 
   if (score < threshold) {
     return null;
   }
 
-  return {
+  const result: SuggestionResult = {
     display: match.word,
     baseWord: match.word,
     isSynonym: match.matchType === "synonym",
@@ -398,6 +406,13 @@ function createSuggestionResult(match: SearchMatch, originalQuery: string, thres
     // @ts-ignore - temporary debug property
     _debug_matchType: match.matchType,
   };
+
+  // Add highlights if requested
+  if (options?.includeHighlights) {
+    result.highlights = calculateHighlights(match, originalQuery, match.word);
+  }
+
+  return result;
 }
 
 /**
@@ -465,7 +480,14 @@ function generateNgrams(str: string, n: number): string[] {
  * Get suggestions using inverted index (for large datasets)
  * This is a wrapper that converts inverted index results to the same format
  */
-function getSuggestionsInverted(index: FuzzyIndex, query: string, limit: number, threshold: number, processors: LanguageProcessor[]): SuggestionResult[] {
+function getSuggestionsInverted(
+  index: FuzzyIndex,
+  query: string,
+  limit: number,
+  threshold: number,
+  processors: LanguageProcessor[],
+  options?: SearchOptions
+): SuggestionResult[] {
   if (!index.invertedIndex || !index.documents) {
     throw new Error("Inverted index not available");
   }
@@ -475,7 +497,7 @@ function getSuggestionsInverted(index: FuzzyIndex, query: string, limit: number,
 
   // Convert to suggestion results (same as classic approach)
   const results = matches
-    .map((match) => createSuggestionResult(match, query, threshold))
+    .map((match) => createSuggestionResult(match, query, threshold, options))
     .filter((result): result is SuggestionResult => result !== null)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);

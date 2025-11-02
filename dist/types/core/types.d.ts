@@ -12,10 +12,23 @@ export interface SuggestionResult {
     score: number;
     /** Language of the matched word */
     language?: string;
+    /** Match positions for highlighting (optional) */
+    highlights?: MatchHighlight[];
+}
+/** Highlight information for matched portions of text */
+export interface MatchHighlight {
+    /** Start position in the display string (0-indexed) */
+    start: number;
+    /** End position in the display string (exclusive) */
+    end: number;
+    /** Type of match that created this highlight */
+    type: MatchType;
 }
 export interface FuzzyIndex {
     /** Normalized base words */
     base: string[];
+    /** Optional search result cache */
+    _cache?: any;
     /** Variant mappings for fuzzy matching */
     variantToBase: Map<string, Set<string>>;
     /** Phonetic code mappings */
@@ -28,6 +41,10 @@ export interface FuzzyIndex {
     languageProcessors: Map<string, LanguageProcessor>;
     /** Configuration used to build this index */
     config: FuzzyConfig;
+    /** Optional inverted index for large datasets (1M+ words) */
+    invertedIndex?: InvertedIndex;
+    /** Document metadata store (used with inverted index) */
+    documents?: DocumentMetadata[];
 }
 export interface FuzzyConfig {
     /** Languages to enable (default: ['german']) */
@@ -50,6 +67,14 @@ export interface FuzzyConfig {
     customSynonyms?: Record<string, string[]>;
     /** Custom word normalization function */
     customNormalizer?: (word: string) => string;
+    /** Enable inverted index for large datasets (auto-enabled for 10k+ words) */
+    useInvertedIndex?: boolean;
+    /** Field weights for scoring (e.g., { title: 2.0, description: 1.0 }) */
+    fieldWeights?: Record<string, number>;
+    /** Enable search result caching (default: true) */
+    enableCache?: boolean;
+    /** Cache capacity - number of queries to cache (default: 100) */
+    cacheSize?: number;
 }
 export type FuzzyFeature = "phonetic" | "compound" | "synonyms" | "keyboard-neighbors" | "partial-words" | "missing-letters" | "extra-letters" | "transpositions";
 export interface LanguageProcessor {
@@ -94,6 +119,13 @@ export interface BuildIndexOptions {
     languageProcessors?: LanguageProcessor[];
     /** Progress callback for large datasets */
     onProgress?: (processed: number, total: number) => void;
+    /** Force use of inverted index (auto-enabled for 10k+ words) */
+    useInvertedIndex?: boolean;
+    /** Field data for weighted search (e.g., [{ word: 'Apple', fields: { title: 'Apple Inc.' } }]) */
+    fieldData?: Array<{
+        word: string;
+        fields?: Record<string, string>;
+    }>;
 }
 export interface SearchOptions {
     /** Override max results for this search */
@@ -106,6 +138,8 @@ export interface SearchOptions {
     matchTypes?: MatchType[];
     /** Include debug information */
     debug?: boolean;
+    /** Include match highlights for UI rendering */
+    includeHighlights?: boolean;
 }
 export interface DebugInfo {
     /** Query processing steps */
@@ -128,5 +162,53 @@ export interface DebugInfo {
 export interface SuggestionResultWithDebug extends SuggestionResult {
     /** Debug information (only included if debug: true) */
     debug?: DebugInfo;
+}
+/**
+ * Inverted Index Architecture
+ * Optimized for large datasets (1M+ words)
+ * Industry-standard search engine approach
+ */
+/** Document metadata for inverted index */
+export interface DocumentMetadata {
+    /** Unique document ID */
+    id: number;
+    /** Original word/term */
+    word: string;
+    /** Normalized form */
+    normalized: string;
+    /** Phonetic code (if phonetic feature enabled) */
+    phoneticCode?: string;
+    /** Language of the word */
+    language: string;
+    /** Optional field values for weighted search */
+    fields?: Record<string, string>;
+    /** Compound word parts (if applicable) */
+    compoundParts?: string[];
+}
+/** Posting list entry - maps term to document IDs */
+export interface PostingList {
+    /** Term/token */
+    term: string;
+    /** Document IDs containing this term */
+    docIds: number[];
+    /** Term frequency in each document (parallel to docIds) */
+    frequencies?: number[];
+}
+/** Inverted index structure */
+export interface InvertedIndex {
+    /** Term → Posting List mapping (main index) */
+    termToPostings: Map<string, PostingList>;
+    /** Phonetic code → Posting List mapping */
+    phoneticToPostings: Map<string, PostingList>;
+    /** N-gram → Posting List mapping */
+    ngramToPostings: Map<string, PostingList>;
+    /** Synonym → Posting List mapping */
+    synonymToPostings: Map<string, PostingList>;
+    /** Field-specific indices for weighted search */
+    fieldIndices?: Map<string, Map<string, PostingList>>;
+    /** Total number of documents */
+    totalDocs: number;
+    /** Average document length (for BM25 scoring) */
+    avgDocLength: number;
 }
 //# sourceMappingURL=types.d.ts.map

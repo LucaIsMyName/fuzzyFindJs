@@ -13,11 +13,25 @@ export interface SuggestionResult {
   score: number;
   /** Language of the matched word */
   language?: string;
+  /** Match positions for highlighting (optional) */
+  highlights?: MatchHighlight[];
+}
+
+/** Highlight information for matched portions of text */
+export interface MatchHighlight {
+  /** Start position in the display string (0-indexed) */
+  start: number;
+  /** End position in the display string (exclusive) */
+  end: number;
+  /** Type of match that created this highlight */
+  type: MatchType;
 }
 
 export interface FuzzyIndex {
   /** Normalized base words */
   base: string[];
+  /** Optional search result cache */
+  _cache?: any; // SearchCache - using any to avoid circular dependency
   /** Variant mappings for fuzzy matching */
   variantToBase: Map<string, Set<string>>;
   /** Phonetic code mappings */
@@ -61,6 +75,10 @@ export interface FuzzyConfig {
   useInvertedIndex?: boolean;
   /** Field weights for scoring (e.g., { title: 2.0, description: 1.0 }) */
   fieldWeights?: Record<string, number>;
+  /** Enable search result caching (default: true) */
+  enableCache?: boolean;
+  /** Cache capacity - number of queries to cache (default: 100) */
+  cacheSize?: number;
 }
 
 export type FuzzyFeature =
@@ -144,6 +162,8 @@ export interface SearchOptions {
   matchTypes?: MatchType[];
   /** Include debug information */
   debug?: boolean;
+  /** Include match highlights for UI rendering */
+  includeHighlights?: boolean;
 }
 
 export interface DebugInfo {

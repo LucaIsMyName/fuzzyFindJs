@@ -1,4 +1,4 @@
-import { buildFuzzyIndex, getSuggestions, PERFORMANCE_CONFIGS } from './src/index.js';
+import { buildFuzzyIndex, getSuggestions, PERFORMANCE_CONFIGS, formatHighlightedHTML } from './src/index.js';
 
 // Mock Dictionaries
 const DICTIONARIES = {
@@ -615,5 +615,111 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Content Search Demo
+let contentSearchIndex = null;
+const contentText = `FuzzyFindJS is a powerful fuzzy search library with multi-language support. 
+It features phonetic matching, compound word splitting, and intelligent synonym support. 
+The library is optimized for performance with three different modes: fast, balanced, and comprehensive. 
+It includes an inverted index for large datasets and search result caching for lightning-fast autocomplete.`;
+
+function initContentSearch() {
+  // Extract words from content
+  const words = contentText.split(/\s+/).filter(w => w.length > 2);
+  
+  // Build index with highlighting enabled
+  contentSearchIndex = buildFuzzyIndex(words, {
+    config: {
+      languages: ['english'],
+      performance: 'balanced',
+      enableCache: true,
+      cacheSize: 50
+    }
+  });
+
+  // Add event listener
+  const contentSearchInput = document.getElementById('contentSearch');
+  if (contentSearchInput) {
+    contentSearchInput.addEventListener('input', debounce(performContentSearch, 150));
+  }
+}
+
+function performContentSearch() {
+  const query = document.getElementById('contentSearch').value.trim();
+  const resultsContainer = document.getElementById('contentSearchResults');
+  const cacheStatsEl = document.getElementById('cacheStats');
+
+  if (!query || query.length < 2) {
+    resultsContainer.innerHTML = `<p class="text-gray-700">${escapeHtml(contentText)}</p>`;
+    if (cacheStatsEl) cacheStatsEl.textContent = 'N/A';
+    return;
+  }
+
+  // Search with highlighting
+  const results = getSuggestions(contentSearchIndex, query, 10, {
+    includeHighlights: true
+  });
+
+  // Update cache stats
+  if (cacheStatsEl && contentSearchIndex._cache) {
+    const stats = contentSearchIndex._cache.getStats();
+    cacheStatsEl.textContent = `${stats.hits} hits, ${stats.misses} misses (${(stats.hitRate * 100).toFixed(1)}% hit rate)`;
+  }
+
+  if (results.length === 0) {
+    resultsContainer.innerHTML = `<p class="text-gray-500 italic">No matches found for "${escapeHtml(query)}"</p>`;
+    return;
+  }
+
+  // Highlight matches in the original text
+  const matchedWords = new Map(results.map(r => [r.display.toLowerCase(), r]));
+
+  // Split text into words and whitespace, preserving structure
+  const words = contentText.split(/(\s+)/);
+  const highlightedWords = words.map(word => {
+    // Skip whitespace
+    if (/^\s+$/.test(word)) {
+      return word;
+    }
+
+    // Clean word for matching (remove punctuation)
+    const cleanWord = word.toLowerCase().replace(/^[.,!?;:]+|[.,!?;:]+$/g, '');
+    
+    if (matchedWords.has(cleanWord)) {
+      const result = matchedWords.get(cleanWord);
+      
+      // Extract punctuation
+      const leadingPunct = word.match(/^[.,!?;:]+/)?.[0] || '';
+      const trailingPunct = word.match(/[.,!?;:]+$/)?.[0] || '';
+      const wordCore = word.slice(leadingPunct.length, word.length - trailingPunct.length);
+      
+      // Apply highlights if available
+      if (result.highlights && result.highlights.length > 0) {
+        return leadingPunct + formatHighlightedHTML(wordCore, result.highlights) + trailingPunct;
+      }
+      
+      // Fallback to simple highlight
+      return leadingPunct + `<mark class="highlight highlight--exact">${escapeHtml(wordCore)}</mark>` + trailingPunct;
+    }
+    
+    return escapeHtml(word);
+  });
+
+  resultsContainer.innerHTML = `
+    <p class="text-gray-700">${highlightedWords.join('')}</p>
+    <div class="mt-3 pt-3 border-t border-gray-300">
+      <p class="text-xs text-gray-600 font-semibold mb-2">Found ${results.length} matches:</p>
+      <div class="flex flex-wrap gap-2">
+        ${results.slice(0, 10).map(r => `
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium">
+            ${r.highlights && r.highlights.length > 0 ? formatHighlightedHTML(r.display, r.highlights) : escapeHtml(r.display)}
+            <span class="text-blue-600">${(r.score * 100).toFixed(0)}%</span>
+          </span>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 // Initialize on load
 init();
+initContentSearch();

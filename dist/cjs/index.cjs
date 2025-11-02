@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const index = require("./core/index.cjs");
+const highlighting = require("./core/highlighting.cjs");
+const cache = require("./core/cache.cjs");
 const config = require("./core/config.cjs");
 const index$1 = require("./languages/index.cjs");
 const levenshtein = require("./algorithms/levenshtein.cjs");
@@ -25,6 +27,10 @@ function createFuzzySearch(dictionary, options = {}) {
 const VERSION = "1.0.2";
 exports.buildFuzzyIndex = index.buildFuzzyIndex;
 exports.getSuggestions = index.getSuggestions;
+exports.calculateHighlights = highlighting.calculateHighlights;
+exports.formatHighlightedHTML = highlighting.formatHighlightedHTML;
+exports.LRUCache = cache.LRUCache;
+exports.SearchCache = cache.SearchCache;
 exports.DEFAULT_CONFIG = config.DEFAULT_CONFIG;
 exports.PERFORMANCE_CONFIGS = config.PERFORMANCE_CONFIGS;
 exports.mergeConfig = config.mergeConfig;

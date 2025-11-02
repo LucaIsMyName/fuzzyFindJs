@@ -5,6 +5,7 @@ import type { FuzzyIndex, SuggestionResult, BuildIndexOptions, SearchOptions } f
 export declare function buildFuzzyIndex(words?: string[], options?: BuildIndexOptions): FuzzyIndex;
 /**
  * Get fuzzy search suggestions from an index
+ * Auto-detects whether to use inverted index or classic hash-based approach
  */
 export declare function getSuggestions(index: FuzzyIndex, query: string, maxResults?: number, options?: SearchOptions): SuggestionResult[];
 //# sourceMappingURL=index.d.ts.map

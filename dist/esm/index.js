@@ -1,4 +1,6 @@
 import { buildFuzzyIndex, getSuggestions } from "./core/index.js";
+import { calculateHighlights, formatHighlightedHTML } from "./core/highlighting.js";
+import { LRUCache, SearchCache } from "./core/cache.js";
 import { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 import { LanguageRegistry } from "./languages/index.js";
 import { areStringsSimilar, calculateDamerauLevenshteinDistance, calculateLevenshteinDistance, calculateNgramSimilarity, distanceToSimilarity } from "./algorithms/levenshtein.js";
@@ -27,17 +29,21 @@ export {
   EnglishProcessor,
   FrenchProcessor,
   GermanProcessor,
+  LRUCache,
   LanguageRegistry,
   PERFORMANCE_CONFIGS,
+  SearchCache,
   SpanishProcessor,
   VERSION,
   areStringsSimilar,
   buildFuzzyIndex,
   calculateDamerauLevenshteinDistance,
+  calculateHighlights,
   calculateLevenshteinDistance,
   calculateNgramSimilarity,
   createFuzzySearch,
   distanceToSimilarity,
+  formatHighlightedHTML,
   getSuggestions,
   mergeConfig
 };

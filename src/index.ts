@@ -15,6 +15,12 @@
 export { buildFuzzyIndex, getSuggestions } from "./core/index.js";
 import { buildFuzzyIndex, getSuggestions } from "./core/index.js";
 
+// Highlighting utilities (for UI rendering)
+export { calculateHighlights, formatHighlightedHTML } from "./core/highlighting.js";
+
+// Cache utilities (for advanced users)
+export { SearchCache, LRUCache } from "./core/cache.js";
+
 // Configuration
 export { DEFAULT_CONFIG, PERFORMANCE_CONFIGS, mergeConfig } from "./core/config.js";
 
