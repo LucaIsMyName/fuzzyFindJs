@@ -21,6 +21,7 @@ import type {
 import {
   //
   calculateLevenshteinDistance,
+  calculateDamerauLevenshteinDistance,
 } from "../algorithms/levenshtein.js";
 
 /**
@@ -162,7 +163,7 @@ export function searchInvertedIndex(invertedIndex: InvertedIndex, documents: Doc
 
     // 6. Fuzzy matches (most expensive, do last)
     if (featureSet.has("missing-letters") || featureSet.has("extra-letters") || featureSet.has("transpositions")) {
-      findFuzzyMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor, config.maxEditDistance);
+      findFuzzyMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor, config.maxEditDistance, config);
     }
   }
 
@@ -331,13 +332,17 @@ function findNgramMatchesInverted(query: string, invertedIndex: InvertedIndex, d
  * Find fuzzy matches in inverted index
  * This is still O(n) but with better cache locality
  */
-function findFuzzyMatchesInverted(query: string, invertedIndex: InvertedIndex, documents: DocumentMetadata[], matches: Map<number, SearchMatch>, processor: LanguageProcessor, maxDistance: number): void {
+function findFuzzyMatchesInverted(query: string, invertedIndex: InvertedIndex, documents: DocumentMetadata[], matches: Map<number, SearchMatch>, processor: LanguageProcessor, maxDistance: number, config: FuzzyConfig): void {
   // Iterate through all terms
   for (const [term, posting] of invertedIndex.termToPostings.entries()) {
     // Quick length check
     if (Math.abs(term.length - query.length) > maxDistance) continue;
 
-    const distance = calculateLevenshteinDistance(query, term, maxDistance);
+    // Use Damerau-Levenshtein if transpositions feature is enabled
+    const useTranspositions = config.features?.includes('transpositions');
+    const distance = useTranspositions
+      ? calculateDamerauLevenshteinDistance(query, term, maxDistance)
+      : calculateLevenshteinDistance(query, term, maxDistance);
     if (distance <= maxDistance) {
       posting.docIds.forEach((docId) => {
         const doc = documents[docId];

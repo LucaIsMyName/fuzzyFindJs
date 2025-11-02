@@ -1,7 +1,7 @@
 import type { FuzzyIndex, FuzzyConfig, SuggestionResult, SearchMatch, BuildIndexOptions, SearchOptions, LanguageProcessor } from "./types.js";
 import { mergeConfig, validateConfig } from "./config.js";
 import { LanguageRegistry } from "../languages/index.js";
-import { calculateLevenshteinDistance, calculateNgramSimilarity } from "../algorithms/levenshtein.js";
+import { calculateLevenshteinDistance, calculateDamerauLevenshteinDistance, calculateNgramSimilarity } from "../algorithms/levenshtein.js";
 import { buildInvertedIndex, searchInvertedIndex } from "./inverted-index.js";
 import { calculateHighlights } from "./highlighting.js";
 import { SearchCache } from "./cache.js";
@@ -571,7 +571,11 @@ function findFuzzyMatches(query: string, index: FuzzyIndex, matches: Map<string,
 
   for (const [variant, words] of index.variantToBase.entries()) {
     if (Math.abs(variant.length - query.length) <= maxDistance) {
-      const distance = calculateLevenshteinDistance(query, variant, maxDistance);
+      // Use Damerau-Levenshtein if transpositions feature is enabled
+      const useTranspositions = index.config.features?.includes('transpositions');
+      const distance = useTranspositions
+        ? calculateDamerauLevenshteinDistance(query, variant, maxDistance)
+        : calculateLevenshteinDistance(query, variant, maxDistance);
 
       if (distance <= maxDistance) {
         words.forEach((word) => {

@@ -394,7 +394,8 @@ function findFuzzyMatches(query, index2, matches, processor, config2) {
   const maxDistance = config2.maxEditDistance;
   for (const [variant, words] of index2.variantToBase.entries()) {
     if (Math.abs(variant.length - query.length) <= maxDistance) {
-      const distance = levenshtein.calculateLevenshteinDistance(query, variant, maxDistance);
+      const useTranspositions = index2.config.features?.includes("transpositions");
+      const distance = useTranspositions ? levenshtein.calculateDamerauLevenshteinDistance(query, variant, maxDistance) : levenshtein.calculateLevenshteinDistance(query, variant, maxDistance);
       if (distance <= maxDistance) {
         words.forEach((word) => {
           const existingMatch = matches.get(word);

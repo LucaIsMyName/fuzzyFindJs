@@ -1,4 +1,4 @@
-import { calculateLevenshteinDistance } from "../algorithms/levenshtein.js";
+import { calculateDamerauLevenshteinDistance, calculateLevenshteinDistance } from "../algorithms/levenshtein.js";
 function buildInvertedIndex(words, languageProcessors, config, featureSet) {
   const documents = [];
   const invertedIndex = {
@@ -86,7 +86,7 @@ function searchInvertedIndex(invertedIndex, documents, query, processors, config
     }
     findNgramMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor.language, config.ngramSize);
     if (featureSet.has("missing-letters") || featureSet.has("extra-letters") || featureSet.has("transpositions")) {
-      findFuzzyMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor, config.maxEditDistance);
+      findFuzzyMatchesInverted(normalizedQuery, invertedIndex, documents, matches, processor, config.maxEditDistance, config);
     }
   }
   return Array.from(matches.values());
@@ -202,10 +202,11 @@ function findNgramMatchesInverted(query, invertedIndex, documents, matches, lang
     }
   });
 }
-function findFuzzyMatchesInverted(query, invertedIndex, documents, matches, processor, maxDistance) {
+function findFuzzyMatchesInverted(query, invertedIndex, documents, matches, processor, maxDistance, config) {
   for (const [term, posting] of invertedIndex.termToPostings.entries()) {
     if (Math.abs(term.length - query.length) > maxDistance) continue;
-    const distance = calculateLevenshteinDistance(query, term, maxDistance);
+    const useTranspositions = config.features?.includes("transpositions");
+    const distance = useTranspositions ? calculateDamerauLevenshteinDistance(query, term, maxDistance) : calculateLevenshteinDistance(query, term, maxDistance);
     if (distance <= maxDistance) {
       posting.docIds.forEach((docId) => {
         const doc = documents[docId];
