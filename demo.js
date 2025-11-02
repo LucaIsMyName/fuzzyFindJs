@@ -625,7 +625,7 @@ It includes an inverted index for large datasets and search result caching for l
 function initContentSearch() {
   // Extract words from content
   const words = contentText.split(/\s+/).filter(w => w.length > 2);
-  
+
   // Build index with highlighting enabled
   contentSearchIndex = buildFuzzyIndex(words, {
     config: {
@@ -683,24 +683,24 @@ function performContentSearch() {
 
     // Clean word for matching (remove punctuation)
     const cleanWord = word.toLowerCase().replace(/^[.,!?;:]+|[.,!?;:]+$/g, '');
-    
+
     if (matchedWords.has(cleanWord)) {
       const result = matchedWords.get(cleanWord);
-      
+
       // Extract punctuation
       const leadingPunct = word.match(/^[.,!?;:]+/)?.[0] || '';
       const trailingPunct = word.match(/[.,!?;:]+$/)?.[0] || '';
       const wordCore = word.slice(leadingPunct.length, word.length - trailingPunct.length);
-      
+
       // Apply highlights if available
       if (result.highlights && result.highlights.length > 0) {
         return leadingPunct + formatHighlightedHTML(wordCore, result.highlights) + trailingPunct;
       }
-      
+
       // Fallback to simple highlight
       return leadingPunct + `<mark class="highlight highlight--exact">${escapeHtml(wordCore)}</mark>` + trailingPunct;
     }
-    
+
     return escapeHtml(word);
   });
 
@@ -724,7 +724,7 @@ function performContentSearch() {
 const INDEX_STORAGE_KEY = 'fuzzy-search-index';
 const INDEX_META_KEY = 'fuzzy-search-index-meta';
 
-window.saveIndexToStorage = function() {
+window.saveIndexToStorage = function () {
   if (!currentIndex) {
     alert('No index to save! Build an index first.');
     return;
@@ -734,10 +734,10 @@ window.saveIndexToStorage = function() {
     const startTime = performance.now();
     const serialized = serializeIndex(currentIndex);
     const saveTime = (performance.now() - startTime).toFixed(2);
-    
+
     // Save to localStorage
     localStorage.setItem(INDEX_STORAGE_KEY, serialized);
-    
+
     // Save metadata
     const meta = {
       dictionary: currentDictionary,
@@ -746,9 +746,9 @@ window.saveIndexToStorage = function() {
       wordCount: currentIndex.base.length
     };
     localStorage.setItem(INDEX_META_KEY, JSON.stringify(meta));
-    
+
     updateSerializationStatus();
-    
+
     alert(`✅ Index saved successfully!\\n\\nSize: ${(meta.size / 1024).toFixed(2)} KB\\nWords: ${meta.wordCount}\\nTime: ${saveTime}ms`);
   } catch (error) {
     console.error('Save error:', error);
@@ -756,7 +756,7 @@ window.saveIndexToStorage = function() {
   }
 };
 
-window.loadIndexFromStorage = async function() {
+window.loadIndexFromStorage = async function () {
   try {
     const serialized = localStorage.getItem(INDEX_STORAGE_KEY);
     if (!serialized) {
@@ -767,18 +767,18 @@ window.loadIndexFromStorage = async function() {
     const startTime = performance.now();
     currentIndex = await deserializeIndex(serialized);
     const loadTime = (performance.now() - startTime).toFixed(2);
-    
+
     // Update UI
     const meta = JSON.parse(localStorage.getItem(INDEX_META_KEY) || '{}');
     currentDictionary = meta.dictionary || 'german-healthcare';
     document.getElementById('dictionarySelect').value = currentDictionary;
     updateDictionaryInfo();
     updateSerializationStatus();
-    
+
     // Clear search
     document.getElementById('searchInput').value = '';
     showNoResults();
-    
+
     alert(`✅ Index loaded successfully!\\n\\nWords: ${currentIndex.base.length}\\nLoad time: ${loadTime}ms\\n\\n🚀 ${(256 / parseFloat(loadTime)).toFixed(0)}x faster than rebuild!`);
   } catch (error) {
     console.error('Load error:', error);
@@ -786,7 +786,7 @@ window.loadIndexFromStorage = async function() {
   }
 };
 
-window.clearSavedIndex = function() {
+window.clearSavedIndex = function () {
   if (confirm('Are you sure you want to delete the saved index?')) {
     localStorage.removeItem(INDEX_STORAGE_KEY);
     localStorage.removeItem(INDEX_META_KEY);
@@ -798,7 +798,7 @@ window.clearSavedIndex = function() {
 function updateSerializationStatus() {
   const statusEl = document.getElementById('serializationStatus');
   const meta = localStorage.getItem(INDEX_META_KEY);
-  
+
   if (meta) {
     const data = JSON.parse(meta);
     const date = new Date(data.timestamp);
