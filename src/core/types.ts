@@ -260,6 +260,9 @@ export interface InvertedIndex {
   /** Term → Posting List mapping (main index) */
   termToPostings: Map<string, PostingList>;
   
+  /** Trie for fast prefix matching (O(k) instead of O(n)) */
+  termTrie?: any; // Trie - using any to avoid circular dependency
+  
   /** Phonetic code → Posting List mapping */
   phoneticToPostings: Map<string, PostingList>;
   

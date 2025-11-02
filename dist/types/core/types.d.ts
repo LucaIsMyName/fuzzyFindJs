@@ -226,6 +226,8 @@ export interface PostingList {
 export interface InvertedIndex {
     /** Term → Posting List mapping (main index) */
     termToPostings: Map<string, PostingList>;
+    /** Trie for fast prefix matching (O(k) instead of O(n)) */
+    termTrie?: any;
     /** Phonetic code → Posting List mapping */
     phoneticToPostings: Map<string, PostingList>;
     /** N-gram → Posting List mapping */

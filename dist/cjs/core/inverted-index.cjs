@@ -1,10 +1,13 @@
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const levenshtein = require("../algorithms/levenshtein.cjs");
+const trie = require("./trie.cjs");
 function buildInvertedIndex(words, languageProcessors, config, featureSet) {
   const documents = [];
   const invertedIndex = {
     termToPostings: /* @__PURE__ */ new Map(),
+    termTrie: new trie.Trie(),
+    // Initialize Trie for fast prefix matching
     phoneticToPostings: /* @__PURE__ */ new Map(),
     ngramToPostings: /* @__PURE__ */ new Map(),
     synonymToPostings: /* @__PURE__ */ new Map(),
@@ -32,17 +35,21 @@ function buildInvertedIndex(words, languageProcessors, config, featureSet) {
       documents.push(doc);
       totalLength += normalized.length;
       addToPostingList(invertedIndex.termToPostings, normalized, docId);
-      addToPostingList(invertedIndex.termToPostings, trimmedWord.toLowerCase(), docId);
+      invertedIndex.termTrie.insert(normalized, [docId]);
+      const lowerWord = trimmedWord.toLowerCase();
+      addToPostingList(invertedIndex.termToPostings, lowerWord, docId);
+      invertedIndex.termTrie.insert(lowerWord, [docId]);
       if (featureSet.has("partial-words")) {
         const variants = processor.getWordVariants(trimmedWord);
         variants.forEach((variant) => {
           addToPostingList(invertedIndex.termToPostings, variant, docId);
+          invertedIndex.termTrie.insert(variant, [docId]);
         });
       }
       if (phoneticCode) {
         addToPostingList(invertedIndex.phoneticToPostings, phoneticCode, docId);
       }
-      const ngrams = generateNgrams(normalized, config.ngramSize);
+      const ngrams = levenshtein.generateNgrams(normalized, config.ngramSize);
       ngrams.forEach((ngram) => {
         addToPostingList(invertedIndex.ngramToPostings, ngram, docId);
       });
@@ -50,6 +57,7 @@ function buildInvertedIndex(words, languageProcessors, config, featureSet) {
         compoundParts.forEach((part) => {
           const normalizedPart = processor.normalize(part);
           addToPostingList(invertedIndex.termToPostings, normalizedPart, docId);
+          invertedIndex.termTrie.insert(normalizedPart, [docId]);
         });
       }
       if (featureSet.has("synonyms")) {
@@ -103,14 +111,6 @@ function addToPostingList(postings, term, docId) {
     posting.docIds.push(docId);
   }
 }
-function generateNgrams(str, n) {
-  if (str.length < n) return [str];
-  const ngrams = [];
-  for (let i = 0; i <= str.length - n; i++) {
-    ngrams.push(str.slice(i, i + n));
-  }
-  return ngrams;
-}
 function findExactMatchesInverted(query, invertedIndex, documents, matches, language) {
   const posting = invertedIndex.termToPostings.get(query);
   if (!posting) return;
@@ -129,20 +129,40 @@ function findExactMatchesInverted(query, invertedIndex, documents, matches, lang
   });
 }
 function findPrefixMatchesInverted(query, invertedIndex, documents, matches, language) {
-  for (const [term, posting] of invertedIndex.termToPostings.entries()) {
-    if (term.startsWith(query) && term !== query) {
-      posting.docIds.forEach((docId) => {
-        const doc = documents[docId];
-        if (!doc) return;
-        if (!matches.has(docId)) {
-          matches.set(docId, {
-            word: doc.word,
-            normalized: term,
-            matchType: "prefix",
-            language
-          });
-        }
-      });
+  if (invertedIndex.termTrie) {
+    const prefixMatches = invertedIndex.termTrie.findWithPrefix(query);
+    for (const [term, docIds] of prefixMatches) {
+      if (term !== query) {
+        docIds.forEach((docId) => {
+          const doc = documents[docId];
+          if (!doc) return;
+          if (!matches.has(docId)) {
+            matches.set(docId, {
+              word: doc.word,
+              normalized: term,
+              matchType: "prefix",
+              language
+            });
+          }
+        });
+      }
+    }
+  } else {
+    for (const [term, posting] of invertedIndex.termToPostings.entries()) {
+      if (term.startsWith(query) && term !== query) {
+        posting.docIds.forEach((docId) => {
+          const doc = documents[docId];
+          if (!doc) return;
+          if (!matches.has(docId)) {
+            matches.set(docId, {
+              word: doc.word,
+              normalized: term,
+              matchType: "prefix",
+              language
+            });
+          }
+        });
+      }
     }
   }
 }
@@ -183,7 +203,7 @@ function findSynonymMatchesInverted(query, invertedIndex, documents, matches) {
 }
 function findNgramMatchesInverted(query, invertedIndex, documents, matches, language, ngramSize) {
   if (query.length < ngramSize) return;
-  const queryNgrams = generateNgrams(query, ngramSize);
+  const queryNgrams = levenshtein.generateNgrams(query, ngramSize);
   const candidateDocs = /* @__PURE__ */ new Set();
   queryNgrams.forEach((ngram) => {
     const posting = invertedIndex.ngramToPostings.get(ngram);

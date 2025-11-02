@@ -126,6 +126,7 @@ export {
   calculateDamerauLevenshteinDistance,
   calculateLevenshteinDistance,
   calculateNgramSimilarity,
-  distanceToSimilarity
+  distanceToSimilarity,
+  generateNgrams
 };
 //# sourceMappingURL=levenshtein.js.map

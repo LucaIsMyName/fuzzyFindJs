@@ -149,7 +149,7 @@ export function calculateNgramSimilarity(str1: string, str2: string, n: number =
 /**
  * Generate n-grams from a string
  */
-function generateNgrams(str: string, n: number): string[] {
+export function generateNgrams(str: string, n: number): string[] {
   if (str.length < n) return [str];
 
   const ngrams: string[] = [];

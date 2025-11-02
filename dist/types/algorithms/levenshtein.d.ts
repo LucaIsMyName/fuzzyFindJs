@@ -18,6 +18,10 @@ export declare function calculateDamerauLevenshteinDistance(str1: string, str2: 
  */
 export declare function calculateNgramSimilarity(str1: string, str2: string, n?: number): number;
 /**
+ * Generate n-grams from a string
+ */
+export declare function generateNgrams(str: string, n: number): string[];
+/**
  * Calculate similarity score (0-1) from edit distance
  */
 export declare function distanceToSimilarity(distance: number, maxLength: number): number;

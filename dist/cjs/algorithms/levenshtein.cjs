@@ -128,4 +128,5 @@ exports.calculateDamerauLevenshteinDistance = calculateDamerauLevenshteinDistanc
 exports.calculateLevenshteinDistance = calculateLevenshteinDistance;
 exports.calculateNgramSimilarity = calculateNgramSimilarity;
 exports.distanceToSimilarity = distanceToSimilarity;
+exports.generateNgrams = generateNgrams;
 //# sourceMappingURL=levenshtein.cjs.map
