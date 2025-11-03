@@ -156,7 +156,18 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
   const processedWords = new Set<string>();
   let processed = 0;
 
-  for (const item of words) {
+  // OPTIMIZATION 1: Pre-deduplicate simple string arrays to skip redundant processing
+  // For object arrays, we keep all items as they may have different field values
+  const itemsToProcess = (hasFields && isObjectArray) 
+    ? words 
+    : Array.from(new Set(
+        words
+          .filter(w => w != null)
+          .map(w => typeof w === 'string' ? w.trim() : String(w).trim())
+          .filter(w => w.length >= config.minQueryLength)
+      ));
+
+  for (const item of itemsToProcess) {
     if (!item) continue;
 
     // Handle multi-field objects
