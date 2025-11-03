@@ -51,8 +51,9 @@ class BaseLanguageProcessor {
   }
   /**
    * Generate common word variants
+   * OPTIMIZATION 2: In fast mode, generate fewer prefixes to reduce index size
    */
-  getWordVariants(word) {
+  getWordVariants(word, performanceMode) {
     const variants = /* @__PURE__ */ new Set();
     const normalized = this.normalize(word);
     variants.add(normalized);
@@ -64,7 +65,8 @@ class BaseLanguageProcessor {
       }
     }
     if (normalized.length > 4) {
-      for (let i = 3; i < normalized.length; i++) {
+      const step = performanceMode === "fast" ? 2 : 1;
+      for (let i = 3; i < normalized.length; i += step) {
         variants.add(normalized.slice(0, i));
       }
     }

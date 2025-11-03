@@ -66,8 +66,9 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
 
   /**
    * Generate common word variants
+   * OPTIMIZATION 2: In fast mode, generate fewer prefixes to reduce index size
    */
-  getWordVariants(word: string): string[] {
+  getWordVariants(word: string, performanceMode?: string): string[] {
     const variants = new Set<string>();
     const normalized = this.normalize(word);
 
@@ -84,7 +85,9 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
 
     // Add partial variants for longer words
     if (normalized.length > 4) {
-      for (let i = 3; i < normalized.length; i++) {
+      // OPTIMIZATION: In fast mode, generate every 2nd prefix to reduce index size by ~50%
+      const step = performanceMode === 'fast' ? 2 : 1;
+      for (let i = 3; i < normalized.length; i += step) {
         variants.add(normalized.slice(0, i));
       }
     }

@@ -102,9 +102,14 @@ function buildFuzzyIndex(words = [], options = {}) {
 }
 function processWordWithProcessor(word, processor, index, config, featureSet) {
   const normalized = processor.normalize(word);
+  const lowercase = word.toLowerCase();
   addToVariantMap(index.variantToBase, normalized, word);
-  addToVariantMap(index.variantToBase, word.toLowerCase(), word);
-  addToVariantMap(index.variantToBase, word, word);
+  if (lowercase !== normalized) {
+    addToVariantMap(index.variantToBase, lowercase, word);
+  }
+  if (word !== normalized && word !== lowercase) {
+    addToVariantMap(index.variantToBase, word, word);
+  }
   const accentFreeWord = removeAccents(word);
   if (accentFreeWord !== word) {
     addToVariantMap(index.variantToBase, accentFreeWord, word);
@@ -115,7 +120,7 @@ function processWordWithProcessor(word, processor, index, config, featureSet) {
     }
   }
   if (featureSet.has("partial-words")) {
-    const variants = processor.getWordVariants(word);
+    const variants = processor.getWordVariants(word, config.performance);
     variants.forEach((variant) => {
       addToVariantMap(index.variantToBase, variant, word);
     });
@@ -126,7 +131,9 @@ function processWordWithProcessor(word, processor, index, config, featureSet) {
       addToVariantMap(index.phoneticToBase, phoneticCode, word);
     }
   }
-  const ngrams = generateNgrams(normalized, config.ngramSize);
+  const shouldLimitNgrams = config.performance === "fast" && normalized.length > 15;
+  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+  const ngrams = generateNgrams(ngramSource, config.ngramSize);
   ngrams.forEach((ngram) => {
     addToVariantMap(index.ngramIndex, ngram, word);
   });
@@ -168,7 +175,7 @@ function processWordWithProcessorAndField(fieldValue, baseId, fieldName, process
     }
   }
   if (featureSet.has("partial-words")) {
-    const variants = processor.getWordVariants(fieldValue);
+    const variants = processor.getWordVariants(fieldValue, config.performance);
     variants.forEach((variant) => {
       addToVariantMapWithField(index.variantToBase, variant, baseId);
     });
@@ -179,7 +186,9 @@ function processWordWithProcessorAndField(fieldValue, baseId, fieldName, process
       addToVariantMapWithField(index.phoneticToBase, phoneticCode, baseId);
     }
   }
-  const ngrams = generateNgrams(normalized, config.ngramSize);
+  const shouldLimitNgrams = config.performance === "fast" && normalized.length > 15;
+  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+  const ngrams = generateNgrams(ngramSource, config.ngramSize);
   ngrams.forEach((ngram) => {
     addToVariantMapWithField(index.ngramIndex, ngram, baseId);
   });

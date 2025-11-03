@@ -139,7 +139,7 @@ export interface LanguageProcessor {
   /** Split compound words (if supported) */
   splitCompoundWords(word: string): string[];
   /** Get word variants (endings, prefixes, etc.) */
-  getWordVariants(word: string): string[];
+  getWordVariants(word: string, performanceMode?: string): string[];
   /** Get built-in synonyms for this language */
   getSynonyms(word: string): string[];
   /** Check if character substitution is valid (keyboard neighbors, etc.) */

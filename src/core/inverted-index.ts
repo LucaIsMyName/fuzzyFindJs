@@ -78,7 +78,7 @@ export function buildInvertedIndex(
 
       // Index word variants (prefixes)
       if (featureSet.has("partial-words")) {
-        const variants = processor.getWordVariants(trimmedWord);
+        const variants = processor.getWordVariants(trimmedWord, config.performance);
         variants.forEach((variant) => {
           addToPostingList(invertedIndex.termToPostings, variant, docId);
           invertedIndex.termTrie!.insert(variant, [docId]);

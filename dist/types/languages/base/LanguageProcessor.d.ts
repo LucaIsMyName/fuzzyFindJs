@@ -21,8 +21,9 @@ export declare abstract class BaseLanguageProcessor implements LanguageProcessor
     splitCompoundWords(word: string): string[];
     /**
      * Generate common word variants
+     * OPTIMIZATION 2: In fast mode, generate fewer prefixes to reduce index size
      */
-    getWordVariants(word: string): string[];
+    getWordVariants(word: string, performanceMode?: string): string[];
     /**
      * Get common word endings for this language (override for language-specific endings)
      */

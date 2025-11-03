@@ -156,18 +156,7 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
   const processedWords = new Set<string>();
   let processed = 0;
 
-  // OPTIMIZATION 1: Pre-deduplicate simple string arrays to skip redundant processing
-  // For object arrays, we keep all items as they may have different field values
-  const itemsToProcess = (hasFields && isObjectArray) 
-    ? words 
-    : Array.from(new Set(
-        words
-          .filter(w => w != null)
-          .map(w => typeof w === 'string' ? w.trim() : String(w).trim())
-          .filter(w => w.length >= config.minQueryLength)
-      ));
-
-  for (const item of itemsToProcess) {
+  for (const item of words) {
     if (!item) continue;
 
     // Handle multi-field objects
@@ -246,12 +235,16 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
  */
 function processWordWithProcessor(word: string, processor: LanguageProcessor, index: FuzzyIndex, config: FuzzyConfig, featureSet: Set<string>): void {
   const normalized = processor.normalize(word);
+  const lowercase = word.toLowerCase();
 
-  // Add base word mapping
+  // OPTIMIZATION 4: Skip redundant mappings when forms are identical
   addToVariantMap(index.variantToBase, normalized, word);
-  addToVariantMap(index.variantToBase, word.toLowerCase(), word);
-  // Also add the original word as-is for exact matching
-  addToVariantMap(index.variantToBase, word, word);
+  if (lowercase !== normalized) {
+    addToVariantMap(index.variantToBase, lowercase, word);
+  }
+  if (word !== normalized && word !== lowercase) {
+    addToVariantMap(index.variantToBase, word, word);
+  }
 
   // Add accent-insensitive variants
   const accentFreeWord = removeAccents(word);
@@ -267,7 +260,7 @@ function processWordWithProcessor(word: string, processor: LanguageProcessor, in
 
   // Generate and index variants
   if (featureSet.has("partial-words")) {
-    const variants = processor.getWordVariants(word);
+    const variants = processor.getWordVariants(word, config.performance);
     variants.forEach((variant) => {
       addToVariantMap(index.variantToBase, variant, word);
     });
@@ -282,7 +275,10 @@ function processWordWithProcessor(word: string, processor: LanguageProcessor, in
   }
 
   // Generate n-grams for partial matching
-  const ngrams = generateNgrams(normalized, config.ngramSize);
+  // OPTIMIZATION 3: Limit n-gram generation in fast mode to reduce index size
+  const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 15;
+  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+  const ngrams = generateNgrams(ngramSource, config.ngramSize);
   ngrams.forEach((ngram: string) => {
     addToVariantMap(index.ngramIndex, ngram, word);
   });
@@ -340,7 +336,7 @@ function processWordWithProcessorAndField(fieldValue: string, baseId: string, fi
 
   // Generate and index variants
   if (featureSet.has("partial-words")) {
-    const variants = processor.getWordVariants(fieldValue);
+    const variants = processor.getWordVariants(fieldValue, config.performance);
     variants.forEach((variant) => {
       addToVariantMapWithField(index.variantToBase, variant, baseId, fieldName);
     });
@@ -355,7 +351,10 @@ function processWordWithProcessorAndField(fieldValue: string, baseId: string, fi
   }
 
   // Generate n-grams for partial matching
-  const ngrams = generateNgrams(normalized, config.ngramSize);
+  // OPTIMIZATION 3: Limit n-gram generation in fast mode to reduce index size
+  const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 15;
+  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+  const ngrams = generateNgrams(ngramSource, config.ngramSize);
   ngrams.forEach((ngram: string) => {
     addToVariantMapWithField(index.ngramIndex, ngram, baseId, fieldName);
   });

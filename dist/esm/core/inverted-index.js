@@ -40,7 +40,7 @@ function buildInvertedIndex(words, languageProcessors, config, featureSet) {
       addToPostingList(invertedIndex.termToPostings, lowerWord, docId);
       invertedIndex.termTrie.insert(lowerWord, [docId]);
       if (featureSet.has("partial-words")) {
-        const variants = processor.getWordVariants(trimmedWord);
+        const variants = processor.getWordVariants(trimmedWord, config.performance);
         variants.forEach((variant) => {
           addToPostingList(invertedIndex.termToPostings, variant, docId);
           invertedIndex.termTrie.insert(variant, [docId]);
