@@ -1,4 +1,4 @@
-# FuzzyFindJS 🔍
+# 🔍 fuzzyfindjs
 
 A powerful, multi-language optimized fuzzy search library with phonetic matching, compound word splitting, and intelligent synonym support. Built for TypeScript with zero dependencies.
 
