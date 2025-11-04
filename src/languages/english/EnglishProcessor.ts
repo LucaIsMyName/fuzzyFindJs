@@ -195,22 +195,15 @@ export class EnglishProcessor extends BaseLanguageProcessor {
 
   /**
    * English word variants
+   * Uses optimized base implementation with English-specific additions
    */
-  getWordVariants(word: string): string[] {
-    const variants = new Set<string>();
+  getWordVariants(word: string, performanceMode?: string): string[] {
+    // Use optimized base implementation
+    const variants = new Set(super.getWordVariants(word, performanceMode));
+    
     const normalized = this.normalize(word);
 
-    variants.add(normalized);
-    variants.add(word);
-
-    // Add variants without English endings
-    const englishEndings = this.getCommonEndings();
-    for (const ending of englishEndings) {
-      if (normalized.endsWith(ending) && normalized.length > ending.length + 2) {
-        variants.add(normalized.slice(0, -ending.length));
-      }
-    }
-
+    // Add English-specific morphological variants
     // Add plural/singular variants
     if (normalized.endsWith("s") && normalized.length > 3) {
       variants.add(normalized.slice(0, -1));
@@ -229,13 +222,6 @@ export class EnglishProcessor extends BaseLanguageProcessor {
       const base = normalized.slice(0, -2);
       variants.add(base);
       variants.add(base + "e"); // handle dropped 'e'
-    }
-
-    // Add partial variants
-    if (normalized.length > 4) {
-      for (let i = 3; i < normalized.length; i++) {
-        variants.add(normalized.slice(0, i));
-      }
     }
 
     return Array.from(variants);

@@ -21,8 +21,9 @@ export declare class EnglishProcessor extends BaseLanguageProcessor {
     getPhoneticCode(word: string): string;
     /**
      * English word variants
+     * Uses optimized base implementation with English-specific additions
      */
-    getWordVariants(word: string): string[];
+    getWordVariants(word: string, performanceMode?: string): string[];
     /**
      * English word endings
      */

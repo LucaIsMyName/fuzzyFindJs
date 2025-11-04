@@ -26,8 +26,9 @@ export declare class GermanProcessor extends BaseLanguageProcessor {
     splitCompoundWords(word: string): string[];
     /**
      * German word variants including common endings
+     * Uses optimized base implementation with German-specific additions
      */
-    getWordVariants(word: string): string[];
+    getWordVariants(word: string, performanceMode?: string): string[];
     /**
      * German word endings
      */

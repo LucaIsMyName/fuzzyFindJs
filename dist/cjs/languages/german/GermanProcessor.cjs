@@ -151,24 +151,17 @@ class GermanProcessor extends LanguageProcessor.BaseLanguageProcessor {
   }
   /**
    * German word variants including common endings
+   * Uses optimized base implementation with German-specific additions
    */
-  getWordVariants(word) {
-    const variants = /* @__PURE__ */ new Set();
-    const normalized = this.normalize(word);
-    variants.add(normalized);
-    variants.add(word);
+  getWordVariants(word, performanceMode) {
+    const variants = new Set(super.getWordVariants(word, performanceMode));
     const compoundParts = this.splitCompoundWords(word);
-    compoundParts.forEach((part) => variants.add(this.normalize(part)));
-    const germanEndings = this.getCommonEndings();
-    for (const ending of germanEndings) {
-      if (normalized.endsWith(ending) && normalized.length > ending.length + 2) {
-        variants.add(normalized.slice(0, -ending.length));
-      }
-    }
-    if (normalized.length > 4) {
-      for (let i = 3; i < normalized.length; i++) {
-        variants.add(normalized.slice(0, i));
-      }
+    if (compoundParts.length > 1) {
+      compoundParts.forEach((part) => {
+        if (part.length >= 3) {
+          variants.add(this.normalize(part));
+        }
+      });
     }
     return Array.from(variants);
   }

@@ -167,7 +167,7 @@ const results3 = germanSearch.search('krankenh');
 // [{ display: 'Krankenhaus', score: 0.95, ... }]
 ```
 
-## API Documentation
+## 🎛️ API Documentation
 
 ### Core Functions
 
@@ -3409,4 +3409,5 @@ All major functions include comprehensive JSDoc:
 
 - [ ] Add (optional) dictionary imports for english, german ,spanish, france, ... as json files with the eg 500 most common expressions to be used as dictionary
   - [ ] implemenent a native way to use these dictionary ON top of your own OR instead
+- [ ] Numbers inside search -> need to be done way better
 - [ ] 
