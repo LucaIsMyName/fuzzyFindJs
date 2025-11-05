@@ -19,6 +19,8 @@ export interface SuggestionResult {
   field?: string;
   /** All field values for this result (for multi-field search) */
   fields?: Record<string, string>;
+  /** Edit distance from query (for sorting) */
+  _editDistance?: number;
 }
 
 /** Highlight information for matched portions of text */

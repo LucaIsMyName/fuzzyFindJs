@@ -582,8 +582,21 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
   if (options.sort) {
     results = applySorting(results, options.sort);
   } else {
-    // Default: sort by relevance
-    results = results.sort((a, b) => b.score - a.score);
+    // Default: sort by relevance (score DESC, then edit distance ASC, then length ASC)
+    results = results.sort((a, b) => {
+      // Primary: score (higher is better)
+      if (Math.abs(a.score - b.score) > 0.001) {
+        return b.score - a.score;
+      }
+      // Secondary: edit distance (lower is better)
+      const editDistA = a._editDistance ?? Infinity;
+      const editDistB = b._editDistance ?? Infinity;
+      if (editDistA !== editDistB) {
+        return editDistA - editDistB;
+      }
+      // Tertiary: length (shorter is better)
+      return a.display.length - b.display.length;
+    });
   }
 
   // Limit results
@@ -815,12 +828,23 @@ function createSuggestionResult(match: SearchMatch, originalQuery: string, thres
     return null;
   }
 
+  // Calculate edit distance if not already available
+  let editDistance = match.editDistance;
+  if (editDistance === undefined) {
+    editDistance = calculateLevenshteinDistance(
+      originalQuery.toLowerCase(), 
+      match.word.toLowerCase(), 
+      Math.ceil(Math.max(originalQuery.length, match.word.length) * 0.5)
+    );
+  }
+
   const result: SuggestionResult = {
     display: match.word,
     baseWord: match.word,
     isSynonym: match.matchType === "synonym",
     score,
     language: match.language,
+    _editDistance: editDistance,
     // @ts-ignore - temporary debug property
     _debug_matchType: match.matchType,
   };
@@ -841,6 +865,7 @@ function createSuggestionResult(match: SearchMatch, originalQuery: string, thres
 
 /**
  * Calculate match score (0-1, higher is better)
+ * IMPROVED: Uses edit distance as primary metric for better fuzzy matching
  */
 function calculateMatchScore(
   //
@@ -851,24 +876,46 @@ function calculateMatchScore(
   const wordLen = match.word.length;
   const maxLen = Math.max(queryLen, wordLen);
 
+  // Calculate actual edit distance for all match types (if not already provided)
+  let editDistance = match.editDistance;
+  if (editDistance === undefined) {
+    // Calculate edit distance for non-fuzzy matches to enable better comparison
+    editDistance = calculateLevenshteinDistance(query.toLowerCase(), match.word.toLowerCase(), Math.ceil(maxLen * 0.5));
+  }
+
   let score = 0.5; // Base score
+
+  // PRIMARY METRIC: Edit distance-based scoring
+  // Lower edit distance = higher score, regardless of match type
+  const editDistanceScore = Math.max(0, 1.0 - editDistance / maxLen);
 
   switch (match.matchType) {
     case "exact":
       score = 1.0;
       break;
     case "prefix":
-      score = 0.9 - (wordLen - queryLen) / (maxLen * 2);
+      // Penalize prefix matches on words much longer than query
+      // Use edit distance to differentiate quality of prefix matches
+      const lengthPenalty = Math.max(0, (wordLen - queryLen) / maxLen);
+      score = 0.9 - lengthPenalty * 0.3;
+      // Boost if edit distance is very low (close match)
+      if (editDistance <= 2) {
+        score = Math.max(score, editDistanceScore * 0.95);
+      }
       break;
     case "substring":
       score = 0.8;
       break;
     case "phonetic":
-      score = 0.7;
+      // Phonetic matches should consider edit distance too
+      score = Math.max(0.7, editDistanceScore * 0.85);
       break;
     case "fuzzy":
-      if (match.editDistance !== undefined) {
-        score = Math.max(0.3, 1.0 - match.editDistance / maxLen);
+      // Fuzzy matches prioritize edit distance heavily
+      score = Math.max(0.3, editDistanceScore);
+      // Boost fuzzy matches with very low edit distance (1-2 chars off)
+      if (editDistance <= 2) {
+        score = Math.min(1.0, score + 0.1);
       }
       break;
     case "synonym":
@@ -882,10 +929,16 @@ function calculateMatchScore(
       break;
   }
 
-  // Boost score for shorter words (more likely to be what user wants)
-  // But don't boost exact matches - they should stay at 1.0
-  if (wordLen <= queryLen + 2 && match.matchType !== "exact") {
-    score += 0.1;
+  // Length-based adjustments (apply to ALL match types)
+  // Penalize matches that are much longer than the query (likely false positives)
+  // Even "exact" matches should be penalized if word is much longer (substring in longer word)
+  if (wordLen > queryLen * 2) {
+    score *= 0.6;
+  }
+  
+  // Boost matches close to query length (more likely to be what user wants)
+  if (Math.abs(wordLen - queryLen) <= 2 && match.matchType !== "exact") {
+    score = Math.min(1.0, score + 0.05);
   }
 
   return Math.min(1.0, Math.max(0.0, score));
