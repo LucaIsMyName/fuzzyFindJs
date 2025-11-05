@@ -1,6 +1,7 @@
 /**
  * Memory Pooling Utilities
  * Reuse objects and arrays to reduce GC pressure and improve performance
+ * How does this work?
  */
 
 /**

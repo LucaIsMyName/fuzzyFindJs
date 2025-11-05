@@ -276,7 +276,7 @@ function processWordWithProcessor(word: string, processor: LanguageProcessor, in
 
   // Generate n-grams for partial matching (normalized to lowercase)
   // OPTIMIZATION 3: Limit n-gram generation in fast mode to reduce index size
-  const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 15;
+  const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 10;
   const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
   const ngrams = generateNgrams(ngramSource.toLowerCase(), config.ngramSize);
   ngrams.forEach((ngram: string) => {

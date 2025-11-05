@@ -3410,4 +3410,7 @@ All major functions include comprehensive JSDoc:
 - [ ] Add (optional) dictionary imports for english, german ,spanish, france, ... as json files with the eg 500 most common expressions to be used as dictionary
   - [ ] implemenent a native way to use these dictionary ON top of your own OR instead
 - [ ] Numbers inside search -> need to be done way better
-- [ ] 
+- [ ] Make global weighting/Scoring more nuanced and try out different combinations
+- [ ] Make signs "_" and "*" work better inside words like eg. "api_controller1234"
+- [ ] Make Numbers work better inside words like eg. "api_controller1234"
+- [ ] make phrases/phrasing better/fine-grained
