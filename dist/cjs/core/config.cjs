@@ -4,11 +4,11 @@ const DEFAULT_MATCH_TYPE_SCORES = {
   exact: 1,
   prefix: (
     /*0.9*/
-    0.85
+    0.9
   ),
   substring: (
     /*0.8*/
-    0.85
+    0.9
   ),
   phonetic: (
     /*0.7*/
@@ -16,7 +16,7 @@ const DEFAULT_MATCH_TYPE_SCORES = {
   ),
   fuzzy: (
     /*1.0*/
-    0.8
+    0.9
   ),
   fuzzyMin: (
     /*0.2*/
@@ -28,11 +28,11 @@ const DEFAULT_MATCH_TYPE_SCORES = {
   ),
   compound: (
     /*0.75*/
-    0.8
+    0.9
   ),
   ngram: (
     /*0.8*/
-    0.75
+    0.9
   )
 };
 const DEFAULT_SCORING_MODIFIERS = {

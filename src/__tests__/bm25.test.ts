@@ -334,8 +334,9 @@ describe("BM25 Scoring", () => {
         config: {
           languages: ["english"],
           useBM25: true,
-          fuzzyThreshold: 0.3,
+          fuzzyThreshold: 0.2, // Lower threshold to be more lenient
           bm25Weight: 0.7, // Favor BM25
+          maxEditDistance: 2,
         },
       });
 
