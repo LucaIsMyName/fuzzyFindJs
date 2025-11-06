@@ -14,6 +14,7 @@ const phraseParser = require("../utils/phrase-parser.cjs");
 const phraseMatching = require("./phrase-matching.cjs");
 const languageDetection = require("../utils/language-detection.cjs");
 const index$1 = require("../fql/index.cjs");
+const alphanumericSegmenter = require("../utils/alphanumeric-segmenter.cjs");
 const filters = require("./filters.cjs");
 const sorting = require("./sorting.cjs");
 function buildFuzzyIndex(words = [], options = {}) {
@@ -445,7 +446,7 @@ function findFuzzyMatches(query, index2, matches, processor, config2) {
   }
 }
 function createSuggestionResult(match, originalQuery, threshold, index2, options) {
-  let score = calculateMatchScore(match, originalQuery);
+  let score = calculateMatchScore(match, originalQuery, index2.config);
   if (match.bm25Score !== void 0 && index2.config.useBM25) {
     const bm25Weight = index2.config.bm25Weight || 0.6;
     const fuzzyWeight = 1 - bm25Weight;
@@ -475,7 +476,7 @@ function createSuggestionResult(match, originalQuery, threshold, index2, options
   }
   return result;
 }
-function calculateMatchScore(match, query) {
+function calculateMatchScore(match, query, config2) {
   const queryLen = query.length;
   const wordLen = match.word.length;
   const maxLen = Math.max(queryLen, wordLen);
@@ -495,7 +496,11 @@ function calculateMatchScore(match, query) {
       break;
     case "fuzzy":
       if (match.editDistance !== void 0) {
-        score = Math.max(0.3, 1 - match.editDistance / maxLen);
+        if (config2?.enableAlphanumericSegmentation && alphanumericSegmenter.isAlphanumeric(query) && alphanumericSegmenter.isAlphanumeric(match.word)) {
+          score = calculateAlphanumericScore(query, match.word, config2);
+        } else {
+          score = Math.max(0.3, 1 - match.editDistance / maxLen);
+        }
       }
       break;
     case "synonym":
@@ -512,6 +517,45 @@ function calculateMatchScore(match, query) {
     score += 0.1;
   }
   return Math.min(1, Math.max(0, score));
+}
+function calculateAlphanumericScore(query, target, config2) {
+  const queryAlpha = alphanumericSegmenter.extractAlphaPart(query).toLowerCase();
+  const targetAlpha = alphanumericSegmenter.extractAlphaPart(target).toLowerCase();
+  const queryNumeric = alphanumericSegmenter.extractNumericPart(query);
+  const targetNumeric = alphanumericSegmenter.extractNumericPart(target);
+  const alphaWeight = config2.alphanumericAlphaWeight || 0.7;
+  const numericWeight = config2.alphanumericNumericWeight || 0.3;
+  let alphaScore = 0;
+  let numericScore = 0;
+  if (queryAlpha.length > 0 && targetAlpha.length > 0) {
+    const alphaMaxLen = Math.max(queryAlpha.length, targetAlpha.length);
+    const alphaDistance = levenshtein.calculateLevenshteinDistance(queryAlpha, targetAlpha, config2.maxEditDistance);
+    alphaScore = Math.max(0, 1 - alphaDistance / alphaMaxLen);
+  } else if (queryAlpha.length === 0 && targetAlpha.length === 0) {
+    alphaScore = 1;
+  }
+  if (queryNumeric.length > 0 && targetNumeric.length > 0) {
+    if (queryNumeric === targetNumeric) {
+      numericScore = 1;
+    } else {
+      if (targetNumeric.includes(queryNumeric) || queryNumeric.includes(targetNumeric)) {
+        const shorter = queryNumeric.length < targetNumeric.length ? queryNumeric : targetNumeric;
+        const longer = queryNumeric.length < targetNumeric.length ? targetNumeric : queryNumeric;
+        numericScore = shorter.length / longer.length;
+      } else {
+        const numericMaxLen = Math.max(queryNumeric.length, targetNumeric.length);
+        const multiplier = config2.alphanumericNumericEditDistanceMultiplier || 1.5;
+        const numericDistance = levenshtein.calculateLevenshteinDistance(queryNumeric, targetNumeric, Math.ceil(config2.maxEditDistance * multiplier));
+        numericScore = Math.max(0, 1 - numericDistance / numericMaxLen);
+      }
+    }
+  } else if (queryNumeric.length === 0 && targetNumeric.length === 0) {
+    numericScore = 1;
+  } else {
+    numericScore = 0.3;
+  }
+  const combinedScore = alphaScore * alphaWeight + numericScore * numericWeight;
+  return Math.max(0.3, combinedScore);
 }
 function generateNgrams(str, n) {
   if (str.length < n) return [str];

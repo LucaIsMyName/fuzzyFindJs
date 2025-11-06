@@ -12,6 +12,7 @@ import { parseQuery } from "../utils/phrase-parser.js";
 import { matchPhrase } from "./phrase-matching.js";
 import { sampleTextForDetection, detectLanguages } from "../utils/language-detection.js";
 import { isFQLQuery, executeFQLQuery } from "../fql/index.js";
+import { isAlphanumeric, extractAlphaPart, extractNumericPart } from "../utils/alphanumeric-segmenter.js";
 import { applyFilters } from "./filters.js";
 import { applySorting } from "./sorting.js";
 function buildFuzzyIndex(words = [], options = {}) {
@@ -443,7 +444,7 @@ function findFuzzyMatches(query, index, matches, processor, config) {
   }
 }
 function createSuggestionResult(match, originalQuery, threshold, index, options) {
-  let score = calculateMatchScore(match, originalQuery);
+  let score = calculateMatchScore(match, originalQuery, index.config);
   if (match.bm25Score !== void 0 && index.config.useBM25) {
     const bm25Weight = index.config.bm25Weight || 0.6;
     const fuzzyWeight = 1 - bm25Weight;
@@ -473,7 +474,7 @@ function createSuggestionResult(match, originalQuery, threshold, index, options)
   }
   return result;
 }
-function calculateMatchScore(match, query) {
+function calculateMatchScore(match, query, config) {
   const queryLen = query.length;
   const wordLen = match.word.length;
   const maxLen = Math.max(queryLen, wordLen);
@@ -493,7 +494,11 @@ function calculateMatchScore(match, query) {
       break;
     case "fuzzy":
       if (match.editDistance !== void 0) {
-        score = Math.max(0.3, 1 - match.editDistance / maxLen);
+        if (config?.enableAlphanumericSegmentation && isAlphanumeric(query) && isAlphanumeric(match.word)) {
+          score = calculateAlphanumericScore(query, match.word, config);
+        } else {
+          score = Math.max(0.3, 1 - match.editDistance / maxLen);
+        }
       }
       break;
     case "synonym":
@@ -510,6 +515,45 @@ function calculateMatchScore(match, query) {
     score += 0.1;
   }
   return Math.min(1, Math.max(0, score));
+}
+function calculateAlphanumericScore(query, target, config) {
+  const queryAlpha = extractAlphaPart(query).toLowerCase();
+  const targetAlpha = extractAlphaPart(target).toLowerCase();
+  const queryNumeric = extractNumericPart(query);
+  const targetNumeric = extractNumericPart(target);
+  const alphaWeight = config.alphanumericAlphaWeight || 0.7;
+  const numericWeight = config.alphanumericNumericWeight || 0.3;
+  let alphaScore = 0;
+  let numericScore = 0;
+  if (queryAlpha.length > 0 && targetAlpha.length > 0) {
+    const alphaMaxLen = Math.max(queryAlpha.length, targetAlpha.length);
+    const alphaDistance = calculateLevenshteinDistance(queryAlpha, targetAlpha, config.maxEditDistance);
+    alphaScore = Math.max(0, 1 - alphaDistance / alphaMaxLen);
+  } else if (queryAlpha.length === 0 && targetAlpha.length === 0) {
+    alphaScore = 1;
+  }
+  if (queryNumeric.length > 0 && targetNumeric.length > 0) {
+    if (queryNumeric === targetNumeric) {
+      numericScore = 1;
+    } else {
+      if (targetNumeric.includes(queryNumeric) || queryNumeric.includes(targetNumeric)) {
+        const shorter = queryNumeric.length < targetNumeric.length ? queryNumeric : targetNumeric;
+        const longer = queryNumeric.length < targetNumeric.length ? targetNumeric : queryNumeric;
+        numericScore = shorter.length / longer.length;
+      } else {
+        const numericMaxLen = Math.max(queryNumeric.length, targetNumeric.length);
+        const multiplier = config.alphanumericNumericEditDistanceMultiplier || 1.5;
+        const numericDistance = calculateLevenshteinDistance(queryNumeric, targetNumeric, Math.ceil(config.maxEditDistance * multiplier));
+        numericScore = Math.max(0, 1 - numericDistance / numericMaxLen);
+      }
+    }
+  } else if (queryNumeric.length === 0 && targetNumeric.length === 0) {
+    numericScore = 1;
+  } else {
+    numericScore = 0.3;
+  }
+  const combinedScore = alphaScore * alphaWeight + numericScore * numericWeight;
+  return Math.max(0.3, combinedScore);
 }
 function generateNgrams(str, n) {
   if (str.length < n) return [str];

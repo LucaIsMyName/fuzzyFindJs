@@ -6,7 +6,12 @@ const DEFAULT_CONFIG = {
   minQueryLength: 2,
   fuzzyThreshold: 0.75,
   maxEditDistance: 2,
-  ngramSize: 3
+  ngramSize: 3,
+  enableAlphanumericSegmentation: true,
+  // Enabled by default - opt-out for performance if needed
+  alphanumericAlphaWeight: 0.7,
+  alphanumericNumericWeight: 0.3,
+  alphanumericNumericEditDistanceMultiplier: 1.5
 };
 const PERFORMANCE_CONFIGS = {
   fast: {
@@ -14,21 +19,27 @@ const PERFORMANCE_CONFIGS = {
     features: ["partial-words", "missing-letters"],
     maxEditDistance: 1,
     fuzzyThreshold: 0.9,
-    maxResults: 3
+    maxResults: 3,
+    enableAlphanumericSegmentation: true
+    // Enabled in fast mode
   },
   balanced: {
     performance: "balanced",
     features: ["phonetic", "partial-words", "missing-letters", "keyboard-neighbors"],
     maxEditDistance: 2,
     fuzzyThreshold: 0.75,
-    maxResults: 5
+    maxResults: 5,
+    enableAlphanumericSegmentation: true
+    // Enabled in balanced mode
   },
   comprehensive: {
     performance: "comprehensive",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 3,
     fuzzyThreshold: 0.7,
-    maxResults: 10
+    maxResults: 10,
+    enableAlphanumericSegmentation: true
+    // Enabled in comprehensive mode
   }
 };
 const LANGUAGE_FEATURES = {

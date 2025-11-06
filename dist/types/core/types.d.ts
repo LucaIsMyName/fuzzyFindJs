@@ -110,6 +110,14 @@ export interface FuzzyConfig {
     useBloomFilter?: boolean;
     /** Bloom filter false positive rate (default: 0.01 = 1%) */
     bloomFilterFalsePositiveRate?: number;
+    /** Enable segment-aware matching for alphanumeric strings (default: false) */
+    enableAlphanumericSegmentation?: boolean;
+    /** Weight for alphabetic parts in alphanumeric matching (default: 0.7) */
+    alphanumericAlphaWeight?: number;
+    /** Weight for numeric parts in alphanumeric matching (default: 0.3) */
+    alphanumericNumericWeight?: number;
+    /** Edit distance multiplier for numeric segments (default: 1.5, more lenient) */
+    alphanumericNumericEditDistanceMultiplier?: number;
 }
 export type FuzzyFeature = "phonetic" | "compound" | "synonyms" | "keyboard-neighbors" | "partial-words" | "missing-letters" | "extra-letters" | "transpositions";
 export interface LanguageProcessor {

@@ -3102,6 +3102,315 @@ const results = getSuggestions(index, userQuery, 10, {
 
 ## 🧪 Algorithm Details
 
+### Indexing Strategies: HashMap vs Inverted Index
+
+FuzzyFindJS uses **two different indexing strategies** depending on dataset size:
+
+- **< 10,000 items**: HashMap-based indexing (simple, fast for small datasets)
+- **≥ 10,000 items**: Inverted Index (optimized for large datasets, 10-100x faster)
+
+#### 📊 HashMap Indexing (< 10K items)
+
+**How it works:**
+The HashMap approach stores all words in simple JavaScript objects (hash maps) for direct O(1) lookup. Each word is processed and stored with its variants (phonetic codes, n-grams, synonyms) as keys pointing to the original words.
+
+**ASCII Diagram:**
+```
+Dictionary: ["apple", "application", "apply"]
+
+┌─────────────────────────────────────────────────────────┐
+│                    HashMap Index                        │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  base: Map {                                           │
+│    "apple"       → ["apple"]                           │
+│    "application" → ["application"]                     │
+│    "apply"       → ["apply"]                           │
+│  }                                                      │
+│                                                         │
+│  normalized: Map {                                     │
+│    "apple"       → ["apple"]                           │
+│    "application" → ["application"]                     │
+│    "apply"       → ["apply"]                           │
+│  }                                                      │
+│                                                         │
+│  phonetic: Map {                                       │
+│    "APL"  → ["apple", "apply"]    ← same sound!       │
+│    "APLK" → ["application"]                            │
+│  }                                                      │
+│                                                         │
+│  ngrams: Map {                                         │
+│    "app" → ["apple", "application", "apply"]          │
+│    "ppl" → ["apple", "apply"]                         │
+│    "lic" → ["application"]                            │
+│    "cat" → ["application"]                            │
+│    ...                                                 │
+│  }                                                      │
+│                                                         │
+│  synonyms: Map {                                       │
+│    "fruit" → ["apple"]                                 │
+│    "app"   → ["application"]                           │
+│    "software" → ["application"]                        │
+│  }                                                      │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+
+Search Query: "aple" (typo)
+  ↓
+1. Check exact match in base → ❌ not found
+2. Check phonetic "APL" → ✅ ["apple", "apply"]
+3. Check n-grams "apl", "ple" → ✅ ["apple", "apply"]
+4. Calculate edit distance → "apple" (distance: 1)
+  ↓
+Result: "apple" (score: 0.92)
+```
+
+**JSON Example:**
+```json
+{
+  "base": {
+    "apple": ["apple"],
+    "application": ["application"],
+    "apply": ["apply"]
+  },
+  "normalized": {
+    "apple": ["apple"],
+    "application": ["application"],
+    "apply": ["apply"]
+  },
+  "phonetic": {
+    "APL": ["apple", "apply"],
+    "APLK": ["application"]
+  },
+  "ngrams": {
+    "app": ["apple", "application", "apply"],
+    "ppl": ["apple", "apply"],
+    "pli": ["application", "apply"],
+    "lic": ["application"],
+    "cat": ["application"],
+    "ati": ["application"],
+    "tio": ["application"],
+    "ion": ["application"]
+  },
+  "synonyms": {
+    "fruit": ["apple"],
+    "app": ["application"],
+    "software": ["application"]
+  },
+  "config": {
+    "languages": ["english"],
+    "maxEditDistance": 2,
+    "fuzzyThreshold": 0.75
+  }
+}
+```
+
+**Characteristics:**
+- ✅ **Simple**: Easy to understand and debug
+- ✅ **Fast for small datasets**: O(1) lookups
+- ✅ **Low memory overhead**: Minimal data structures
+- ❌ **Scales poorly**: O(n) fuzzy matching requires checking all words
+- ❌ **Slow for large datasets**: 100K+ items become sluggish
+
+---
+
+#### 🚀 Inverted Index (≥ 10K items)
+
+**How it works:**
+The Inverted Index approach builds a sophisticated data structure that maps **terms to document IDs** (posting lists). Instead of storing full words, it creates a reverse lookup where each term points to all documents containing it. This enables **sub-linear search time** for large datasets.
+
+**ASCII Diagram:**
+```
+Documents: 
+  Doc 0: "apple pie recipe"
+  Doc 1: "apple juice fresh"
+  Doc 2: "application development"
+  Doc 3: "apply for job"
+
+┌──────────────────────────────────────────────────────────────┐
+│                    Inverted Index                            │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  termToPostings: Map {                     ← Posting Lists  │
+│    "apple"       → [0, 1]          ┐                        │
+│    "pie"         → [0]             │ Documents containing   │
+│    "recipe"      → [0]             │ each term              │
+│    "juice"       → [1]             │                        │
+│    "fresh"       → [1]             │                        │
+│    "application" → [2]             │                        │
+│    "development" → [2]             │                        │
+│    "apply"       → [3]             │                        │
+│    "job"         → [3]             ┘                        │
+│  }                                                           │
+│                                                              │
+│  termTrie: Trie {                          ← Prefix Search  │
+│    a → p → p → l → e → [0, 1]                              │
+│         │                                                    │
+│         └─→ l → y → [3]                                     │
+│              │                                               │
+│              └─→ i → c → a → t → i → o → n → [2]          │
+│  }                                                           │
+│                                                              │
+│  documentStore: Array [              ← Original Documents   │
+│    { id: 0, text: "apple pie recipe", ... },               │
+│    { id: 1, text: "apple juice fresh", ... },              │
+│    { id: 2, text: "application development", ... },        │
+│    { id: 3, text: "apply for job", ... }                   │
+│  ]                                                           │
+│                                                              │
+│  documentFrequency: Map {            ← BM25 Scoring         │
+│    "apple"       → 2,  // appears in 2 docs                │
+│    "application" → 1,  // appears in 1 doc                 │
+│    "apply"       → 1                                        │
+│  }                                                           │
+│                                                              │
+│  termFrequency: Map {                ← Term Counts          │
+│    0 → { "apple": 1, "pie": 1, "recipe": 1 },             │
+│    1 → { "apple": 1, "juice": 1, "fresh": 1 },            │
+│    2 → { "application": 1, "development": 1 },             │
+│    3 → { "apply": 1, "job": 1 }                            │
+│  }                                                           │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+Search Query: "aple" (typo)
+  ↓
+1. Trie prefix search: "ap*" → candidates: [0,1,2,3]
+2. Posting list intersection → docs with "ap*" terms
+3. Fuzzy match only against candidates (not all docs!)
+4. BM25 scoring for relevance ranking
+  ↓
+Result: Doc 0 "apple pie recipe" (score: 0.95)
+        Doc 1 "apple juice fresh" (score: 0.94)
+```
+
+**JSON Example:**
+```json
+{
+  "termToPostings": {
+    "apple": [0, 1],
+    "pie": [0],
+    "recipe": [0],
+    "juice": [1],
+    "fresh": [1],
+    "application": [2],
+    "development": [2],
+    "apply": [3],
+    "job": [3]
+  },
+  "termTrie": {
+    "root": {
+      "a": {
+        "p": {
+          "p": {
+            "l": {
+              "e": { "docIds": [0, 1], "isEnd": true },
+              "i": { 
+                "c": {
+                  "a": {
+                    "t": {
+                      "i": {
+                        "o": {
+                          "n": { "docIds": [2], "isEnd": true }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "y": { "docIds": [3], "isEnd": true }
+            }
+          }
+        }
+      }
+    }
+  },
+  "documentStore": [
+    {
+      "id": 0,
+      "text": "apple pie recipe",
+      "normalized": "apple pie recipe",
+      "length": 3
+    },
+    {
+      "id": 1,
+      "text": "apple juice fresh",
+      "normalized": "apple juice fresh",
+      "length": 3
+    },
+    {
+      "id": 2,
+      "text": "application development",
+      "normalized": "application development",
+      "length": 2
+    },
+    {
+      "id": 3,
+      "text": "apply for job",
+      "normalized": "apply for job",
+      "length": 3
+    }
+  ],
+  "documentFrequency": {
+    "apple": 2,
+    "pie": 1,
+    "recipe": 1,
+    "juice": 1,
+    "fresh": 1,
+    "application": 1,
+    "development": 1,
+    "apply": 1,
+    "job": 1
+  },
+  "termFrequency": {
+    "0": { "apple": 1, "pie": 1, "recipe": 1 },
+    "1": { "apple": 1, "juice": 1, "fresh": 1 },
+    "2": { "application": 1, "development": 1 },
+    "3": { "apply": 1, "job": 1 }
+  },
+  "avgDocLength": 2.75,
+  "totalDocs": 4,
+  "config": {
+    "useInvertedIndex": true,
+    "useBM25": true,
+    "languages": ["english"]
+  }
+}
+```
+
+**Characteristics:**
+- ✅ **Extremely fast**: O(log n) prefix search via Trie
+- ✅ **Scales to millions**: Tested with 1M+ documents
+- ✅ **Memory efficient**: Shared posting lists, no duplication
+- ✅ **BM25 scoring**: Industry-standard relevance ranking
+- ✅ **Incremental updates**: Add/remove documents efficiently
+- ⚠️ **Higher memory**: More complex data structures
+- ⚠️ **Build time**: Initial indexing takes longer
+
+---
+
+#### 🔄 Automatic Selection
+
+The library **automatically chooses** the best indexing strategy:
+
+```typescript
+// Small dataset (< 10K) → HashMap
+const smallIndex = buildFuzzyIndex(['apple', 'banana', 'cherry']);
+console.log(smallIndex.invertedIndex); // undefined
+
+// Large dataset (≥ 10K) → Inverted Index
+const largeIndex = buildFuzzyIndex(Array(10000).fill('word'));
+console.log(largeIndex.invertedIndex); // { termToPostings: Map, ... }
+
+// Force inverted index (even for small datasets)
+const forcedIndex = buildFuzzyIndex(['apple', 'banana'], {
+  useInvertedIndex: true
+});
+console.log(forcedIndex.invertedIndex); // { termToPostings: Map, ... }
+```
+
+---
+
 ### Matching Strategies
 
 The library uses 6 parallel matching strategies:
@@ -3414,3 +3723,4 @@ All major functions include comprehensive JSDoc:
 - [ ] Make signs "_" and "*" work better inside words like eg. "api_controller1234"
 - [ ] Make Numbers work better inside words like eg. "api_controller1234"
 - [ ] make phrases/phrasing better/fine-grained
+- [ ] make features a plugin system and devloper can add custon features when using fuzzyFindJs (own additional logic and the place/time where it runs (before in between or after the others))

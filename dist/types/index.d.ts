@@ -36,6 +36,8 @@ export type { BM25Config, DocumentStats, CorpusStats, } from "./algorithms/bm25.
 export { BloomFilter, createBloomFilter, } from "./algorithms/bloom-filter.js";
 export type { BloomFilterConfig, } from "./algorithms/bloom-filter.js";
 export { ObjectPool, ArrayPool, MapPool, SetPool, withPooledArray, globalArrayPool, globalMapPool, globalSetPool, } from "./utils/memory-pool.js";
+export { isAlphanumeric, segmentString, getAlphaSegments, getNumericSegments, extractAlphaPart, extractNumericPart, compareSegments, } from "./utils/alphanumeric-segmenter.js";
+export type { Segment, SegmentType, } from "./utils/alphanumeric-segmenter.js";
 /**
  * Creates a fuzzy search instance with sensible defaults - the easiest way to get started.
  *

@@ -17,6 +17,7 @@ import { areStringsSimilar, calculateDamerauLevenshteinDistance, calculateLevens
 import { DEFAULT_BM25_CONFIG, buildCorpusStats, calculateBM25Score, calculateIDF, combineScores, normalizeBM25Score } from "./algorithms/bm25.js";
 import { BloomFilter, createBloomFilter } from "./algorithms/bloom-filter.js";
 import { ArrayPool, MapPool, ObjectPool, SetPool, globalArrayPool, globalMapPool, globalSetPool, withPooledArray } from "./utils/memory-pool.js";
+import { compareSegments, extractAlphaPart, extractNumericPart, getAlphaSegments, getNumericSegments, isAlphanumeric, segmentString } from "./utils/alphanumeric-segmenter.js";
 import { GermanProcessor } from "./languages/german/GermanProcessor.js";
 import { EnglishProcessor } from "./languages/english/EnglishProcessor.js";
 import { SpanishProcessor } from "./languages/spanish/SpanishProcessor.js";
@@ -68,6 +69,7 @@ export {
   calculateLevenshteinDistance,
   calculateNgramSimilarity,
   combineScores,
+  compareSegments,
   createBloomFilter,
   createFuzzySearch,
   dataToIndex,
@@ -76,10 +78,14 @@ export {
   detectLanguages,
   detectLanguagesWithConfidence,
   distanceToSimilarity,
+  extractAlphaPart,
+  extractNumericPart,
   filterStopWords,
   findWordBoundaryMatches,
   formatHighlightedHTML,
   getAccentVariants,
+  getAlphaSegments,
+  getNumericSegments,
   getSerializedSize,
   getStopWordsForLanguages,
   getSuggestions,
@@ -88,6 +94,7 @@ export {
   globalSetPool,
   hasAccents,
   hasPhraseSyntax,
+  isAlphanumeric,
   isStopWord,
   isValidLanguage,
   isWordBoundary,
@@ -105,6 +112,7 @@ export {
   removeFromIndex,
   sampleTextForDetection,
   saveIndexToLocalStorage,
+  segmentString,
   serializeIndex,
   splitPhraseWords,
   updateIndex,

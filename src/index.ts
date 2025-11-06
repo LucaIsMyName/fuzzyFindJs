@@ -207,6 +207,23 @@ export {
   globalSetPool,
 } from "./utils/memory-pool.js";
 
+// Alphanumeric segmentation utilities
+export {
+  //
+  isAlphanumeric,
+  segmentString,
+  getAlphaSegments,
+  getNumericSegments,
+  extractAlphaPart,
+  extractNumericPart,
+  compareSegments,
+} from "./utils/alphanumeric-segmenter.js";
+export type {
+  //
+  Segment,
+  SegmentType,
+} from "./utils/alphanumeric-segmenter.js";
+
 /**
  * Creates a fuzzy search instance with sensible defaults - the easiest way to get started.
  * 

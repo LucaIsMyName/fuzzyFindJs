@@ -45,6 +45,7 @@ import { parseQuery } from "../utils/phrase-parser.js";
 import { matchPhrase } from "./phrase-matching.js";
 import { detectLanguages, sampleTextForDetection } from "../utils/language-detection.js";
 import { isFQLQuery, executeFQLQuery } from "../fql/index.js";
+import { isAlphanumeric, extractAlphaPart, extractNumericPart } from "../utils/alphanumeric-segmenter.js";
 import { applyFilters } from "./filters.js";
 import { applySorting } from "./sorting.js";
 
@@ -802,7 +803,7 @@ function findFuzzyMatches(query: string, index: FuzzyIndex, matches: Map<string,
  * Create a suggestion result from a search match
  */
 function createSuggestionResult(match: SearchMatch, originalQuery: string, threshold: number, index: FuzzyIndex, options?: SearchOptions): SuggestionResult | null {
-  let score = calculateMatchScore(match, originalQuery);
+  let score = calculateMatchScore(match, originalQuery, index.config);
 
   // Combine with BM25 score if available
   if (match.bm25Score !== undefined && index.config.useBM25) {
@@ -850,7 +851,8 @@ function createSuggestionResult(match: SearchMatch, originalQuery: string, thres
 function calculateMatchScore(
   //
   match: SearchMatch,
-  query: string
+  query: string,
+  config?: FuzzyConfig
 ): number {
   const queryLen = query.length;
   const wordLen = match.word.length;
@@ -873,7 +875,12 @@ function calculateMatchScore(
       break;
     case "fuzzy":
       if (match.editDistance !== undefined) {
-        score = Math.max(0.3, 1.0 - match.editDistance / maxLen);
+        // Use segment-aware scoring for alphanumeric strings if enabled
+        if (config?.enableAlphanumericSegmentation && isAlphanumeric(query) && isAlphanumeric(match.word)) {
+          score = calculateAlphanumericScore(query, match.word, config);
+        } else {
+          score = Math.max(0.3, 1.0 - match.editDistance / maxLen);
+        }
       }
       break;
     case "synonym":
@@ -894,6 +901,68 @@ function calculateMatchScore(
   }
 
   return Math.min(1.0, Math.max(0.0, score));
+}
+
+/**
+ * Calculate score for alphanumeric strings using segment-aware matching
+ * Prioritizes alphabetic accuracy over numeric accuracy
+ */
+function calculateAlphanumericScore(
+  query: string,
+  target: string,
+  config: FuzzyConfig
+): number {
+  // Extract alphabetic and numeric parts
+  const queryAlpha = extractAlphaPart(query).toLowerCase();
+  const targetAlpha = extractAlphaPart(target).toLowerCase();
+  const queryNumeric = extractNumericPart(query);
+  const targetNumeric = extractNumericPart(target);
+
+  const alphaWeight = config.alphanumericAlphaWeight || 0.7;
+  const numericWeight = config.alphanumericNumericWeight || 0.3;
+
+  let alphaScore = 0;
+  let numericScore = 0;
+
+  // Calculate alphabetic score
+  if (queryAlpha.length > 0 && targetAlpha.length > 0) {
+    const alphaMaxLen = Math.max(queryAlpha.length, targetAlpha.length);
+    const alphaDistance = calculateLevenshteinDistance(queryAlpha, targetAlpha, config.maxEditDistance);
+    alphaScore = Math.max(0, 1.0 - alphaDistance / alphaMaxLen);
+  } else if (queryAlpha.length === 0 && targetAlpha.length === 0) {
+    alphaScore = 1.0; // Both have no alpha parts
+  }
+
+  // Calculate numeric score (more lenient)
+  if (queryNumeric.length > 0 && targetNumeric.length > 0) {
+    if (queryNumeric === targetNumeric) {
+      numericScore = 1.0;
+    } else {
+      // Check if one contains the other
+      if (targetNumeric.includes(queryNumeric) || queryNumeric.includes(targetNumeric)) {
+        const shorter = queryNumeric.length < targetNumeric.length ? queryNumeric : targetNumeric;
+        const longer = queryNumeric.length < targetNumeric.length ? targetNumeric : queryNumeric;
+        numericScore = shorter.length / longer.length;
+      } else {
+        // Use edit distance with multiplier (more lenient for numbers)
+        const numericMaxLen = Math.max(queryNumeric.length, targetNumeric.length);
+        const multiplier = config.alphanumericNumericEditDistanceMultiplier || 1.5;
+        const numericDistance = calculateLevenshteinDistance(queryNumeric, targetNumeric, Math.ceil(config.maxEditDistance * multiplier));
+        numericScore = Math.max(0, 1.0 - numericDistance / numericMaxLen);
+      }
+    }
+  } else if (queryNumeric.length === 0 && targetNumeric.length === 0) {
+    numericScore = 1.0; // Both have no numeric parts
+  } else {
+    // One has numbers, one doesn't - partial penalty
+    numericScore = 0.3;
+  }
+
+  // Weighted combination
+  const combinedScore = alphaScore * alphaWeight + numericScore * numericWeight;
+
+  // Ensure minimum score of 0.3 for fuzzy matches
+  return Math.max(0.3, combinedScore);
 }
 
 /**

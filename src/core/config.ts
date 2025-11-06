@@ -17,6 +17,10 @@ export const DEFAULT_CONFIG: FuzzyConfig = {
   fuzzyThreshold: 0.75,
   maxEditDistance: 2,
   ngramSize: 3,
+  enableAlphanumericSegmentation: true, // Enabled by default - opt-out for performance if needed
+  alphanumericAlphaWeight: 0.7,
+  alphanumericNumericWeight: 0.3,
+  alphanumericNumericEditDistanceMultiplier: 1.5,
 };
 
 /**
@@ -29,6 +33,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     maxEditDistance: 1,
     fuzzyThreshold: 0.9,
     maxResults: 3,
+    enableAlphanumericSegmentation: true, // Enabled in fast mode
   },
   balanced: {
     performance: "balanced",
@@ -36,6 +41,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     maxEditDistance: 2,
     fuzzyThreshold: 0.75,
     maxResults: 5,
+    enableAlphanumericSegmentation: true, // Enabled in balanced mode
   },
   comprehensive: {
     performance: "comprehensive",
@@ -43,6 +49,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     maxEditDistance: 3,
     fuzzyThreshold: 0.7,
     maxResults: 10,
+    enableAlphanumericSegmentation: true, // Enabled in comprehensive mode
   },
 };
 

@@ -139,10 +139,40 @@
             margin-bottom: 1rem;
             padding-left: 1.5rem;
             color: #374151;
+            list-style: none;
         }
 
-        .content li {
+        .content ul > li {
             margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .content ul > li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .content ol {
+            counter-reset: list-counter;
+        }
+
+        .content ol > li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+            counter-increment: list-counter;
+        }
+
+        .content ol > li::before {
+            content: counter(list-counter) ".";
+            position: absolute;
+            left: 0;
+            color: #2563eb;
+            font-weight: 600;
         }
 
         .content pre {
