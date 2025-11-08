@@ -329,8 +329,6 @@ export interface PostingList {
   term: string;
   /** Document IDs containing this term */
   docIds: number[];
-  /** Set for O(1) duplicate checking (kept in sync with docIds) */
-  docIdSet?: Set<number>;
   /** Term frequency in each document (parallel to docIds) */
   frequencies?: number[];
 }

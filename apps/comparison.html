@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FuzzyFindJS vs Fuse.js - Performance Comparison</title>
+  <title>FuzzyFindJS vs Fuse.js - Quality & Performance Comparison</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FuzzyFindJS -->
   <script src="../dist/umd/fuzzyfindjs.min.js"></script>
@@ -13,24 +14,55 @@
     .metric-card {
       transition: all 0.3s ease;
     }
+
     .metric-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+
     .progress-bar {
       transition: width 0.3s ease;
     }
-    .result-good { color: #10b981; }
-    .result-warning { color: #f59e0b; }
-    .result-bad { color: #ef4444; }
+
+    .result-good {
+      color: #10b981;
+    }
+
+    .result-warning {
+      color: #f59e0b;
+    }
+
+    .result-bad {
+      color: #ef4444;
+    }
+
+    /* Custom scrollbar for query results */
+    .overflow-y-auto::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .overflow-y-auto::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 3px;
+    }
+
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+
+    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
   </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <!-- Header -->
     <div class="mb-8">
       <h1 class="text-4xl font-bold text-gray-900 mb-2">⚡ FuzzyFindJS vs Fuse.js</h1>
-      <p class="text-gray-600">Head-to-head performance comparison with large datasets</p>
+      <p class="text-gray-600">Comprehensive quality & performance comparison with diverse query types</p>
     </div>
 
     <!-- Controls -->
@@ -41,15 +73,8 @@
           <label class="block text-sm font-semibold text-gray-700 mb-2">
             Dataset Size: <span id="datasetSizeLabel" class="text-blue-600">10,000</span>
           </label>
-          <input
-            type="range"
-            id="datasetSize"
-            min="1000"
-            max="100000"
-            step="1000"
-            value="10000"
-            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          />
+          <input type="range" id="datasetSize" min="1000" max="100000" step="1000" value="10000"
+            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
           <div class="flex justify-between text-xs text-gray-500 mt-1">
             <span>1K</span>
             <span>100K</span>
@@ -73,23 +98,14 @@
           <label class="block text-sm font-semibold text-gray-700 mb-2">
             Test Queries: <span id="queryCountLabel" class="text-blue-600">100</span>
           </label>
-          <input
-            type="range"
-            id="queryCount"
-            min="10"
-            max="1000"
-            step="10"
-            value="100"
-            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          />
+          <input type="range" id="queryCount" min="10" max="1000" step="10" value="100"
+            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
         </div>
 
         <!-- Run Button -->
         <div class="flex items-end">
-          <button
-            id="runTest"
-            class="w-full px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
+          <button id="runTest"
+            class="w-full px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
             🚀 Run Test
           </button>
         </div>
@@ -113,7 +129,8 @@
       <div class="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold text-gray-900">FuzzyFindJS</h2>
-          <span id="fuzzyWinner" class="hidden px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">🏆 Winner</span>
+          <span id="fuzzyWinner"
+            class="hidden px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">🏆 Winner</span>
         </div>
         <div class="space-y-4">
           <div>
@@ -143,7 +160,8 @@
       <div class="bg-white rounded-lg shadow-sm border-2 border-orange-200 p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold text-gray-900">Fuse.js</h2>
-          <span id="fuseWinner" class="hidden px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">🏆 Winner</span>
+          <span id="fuseWinner"
+            class="hidden px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">🏆 Winner</span>
         </div>
         <div class="space-y-4">
           <div>
@@ -182,7 +200,8 @@
           <div class="flex gap-2">
             <div class="flex-1">
               <div class="w-full bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                <div id="fuzzyBuildBar" class="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2" style="width: 0%">
+                <div id="fuzzyBuildBar" class="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2"
+                  style="width: 0%">
                   <span class="text-xs text-white font-semibold"></span>
                 </div>
               </div>
@@ -190,7 +209,8 @@
             </div>
             <div class="flex-1">
               <div class="w-full bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                <div id="fuseBuildBar" class="bg-orange-500 h-6 rounded-full flex items-center justify-end pr-2" style="width: 0%">
+                <div id="fuseBuildBar" class="bg-orange-500 h-6 rounded-full flex items-center justify-end pr-2"
+                  style="width: 0%">
                   <span class="text-xs text-white font-semibold"></span>
                 </div>
               </div>
@@ -207,7 +227,8 @@
           <div class="flex gap-2">
             <div class="flex-1">
               <div class="w-full bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                <div id="fuzzyQueryBar" class="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2" style="width: 0%">
+                <div id="fuzzyQueryBar" class="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2"
+                  style="width: 0%">
                   <span class="text-xs text-white font-semibold"></span>
                 </div>
               </div>
@@ -215,7 +236,8 @@
             </div>
             <div class="flex-1">
               <div class="w-full bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                <div id="fuseQueryBar" class="bg-orange-500 h-6 rounded-full flex items-center justify-end pr-2" style="width: 0%">
+                <div id="fuseQueryBar" class="bg-orange-500 h-6 rounded-full flex items-center justify-end pr-2"
+                  style="width: 0%">
                   <span class="text-xs text-white font-semibold"></span>
                 </div>
               </div>
@@ -232,7 +254,8 @@
           <div class="flex gap-2">
             <div class="flex-1">
               <div class="w-full bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                <div id="fuzzyTotalBar" class="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2" style="width: 0%">
+                <div id="fuzzyTotalBar" class="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2"
+                  style="width: 0%">
                   <span class="text-xs text-white font-semibold"></span>
                 </div>
               </div>
@@ -240,7 +263,8 @@
             </div>
             <div class="flex-1">
               <div class="w-full bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                <div id="fuseTotalBar" class="bg-orange-500 h-6 rounded-full flex items-center justify-end pr-2" style="width: 0%">
+                <div id="fuseTotalBar" class="bg-orange-500 h-6 rounded-full flex items-center justify-end pr-2"
+                  style="width: 0%">
                   <span class="text-xs text-white font-semibold"></span>
                 </div>
               </div>
@@ -253,7 +277,7 @@
 
     <!-- Sample Query Results -->
     <div id="sampleResults" class="bg-white border border-gray-200 rounded-lg p-6 hidden">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Sample Query Results</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Sample Query Results (showing up to 50 queries)</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- FuzzyFindJS Results -->
         <div>
@@ -264,7 +288,7 @@
             <!-- Results will be inserted here -->
           </div>
         </div>
-        
+
         <!-- Fuse.js Results -->
         <div>
           <h4 class="text-md font-semibold text-orange-600 mb-3 flex items-center">
@@ -281,16 +305,23 @@
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
       <h3 class="text-lg font-semibold text-blue-900 mb-3">About This Comparison</h3>
       <div class="space-y-2 text-sm text-blue-800">
-        <p><strong>Test Methodology:</strong> Both libraries are tested sequentially with identical datasets and queries to ensure fair comparison.</p>
-        <p><strong>FuzzyFindJS:</strong> Multi-language fuzzy search with phonetic matching, compound word splitting, and inverted index for large datasets.</p>
-        <p><strong>Fuse.js:</strong> Popular lightweight fuzzy-search library with configurable threshold and scoring.</p>
+        <p><strong>Test Methodology:</strong> Both libraries are tested with diverse, realistic queries including
+          cities, names, phrases, technical terms, typos, and partial matches.</p>
+        <p><strong>FuzzyFindJS:</strong> Multi-language fuzzy search with phonetic matching, compound word splitting,
+          and inverted index for large datasets.</p>
+        <p><strong>Fuse.js:</strong> Popular lightweight fuzzy-search library with configurable threshold and scoring.
+        </p>
+        <p><strong>Query Types:</strong> Exact matches, prefixes, fuzzy (typos), partial matches, city names, person
+          names, phrases, and technical API-style terms.</p>
         <p><strong>Performance Modes:</strong></p>
         <ul class="ml-4 space-y-1">
-          <li>• <strong>Fast:</strong> Minimal features, fastest indexing (~50-100ms for 10k items), good for real-time use</li>
+          <li>• <strong>Fast:</strong> Minimal features, fastest indexing (~50-100ms for 10k items), good for real-time
+            use</li>
           <li>• <strong>Balanced:</strong> More features enabled, slower indexing (~500ms-2s), better accuracy</li>
           <li>• <strong>Comprehensive:</strong> All features, slowest indexing (~2-10s), maximum accuracy</li>
         </ul>
-        <p><strong>Note:</strong> Results may vary based on dataset characteristics, query patterns, and browser performance.</p>
+        <p><strong>Note:</strong> Results may vary based on dataset characteristics, query patterns, and browser
+          performance.</p>
       </div>
     </div>
   </div>
@@ -333,60 +364,161 @@
       return word;
     }
 
-    // Generate dataset
+    // Generate diverse dataset with realistic data
     function generateDataset(size) {
-      const words = [];
-      const prefixes = ['test', 'data', 'user', 'admin', 'system', 'app', 'web', 'api', 'service', 'client'];
-      const suffixes = ['handler', 'manager', 'service', 'controller', 'provider', 'factory', 'helper', 'util'];
+      const wordsSet = new Set(); // Use Set to ensure uniqueness
+
+      // Real-world data patterns
+      const cities = [
+        'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia',
+        'San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville',
+        'Fort Worth', 'Columbus', 'Charlotte', 'San Francisco', 'Indianapolis', 'Seattle',
+        'Denver', 'Washington', 'Boston', 'Nashville', 'Baltimore', 'Oklahoma City',
+        'Portland', 'Las Vegas', 'Louisville', 'Milwaukee', 'Albuquerque', 'Tucson',
+        'Fresno', 'Sacramento', 'Kansas City', 'Mesa', 'Atlanta', 'Omaha',
+        'Colorado Springs', 'Raleigh', 'Miami', 'Long Beach', 'Virginia Beach', 'Oakland',
+        'Minneapolis', 'Tampa', 'Tulsa', 'Arlington', 'New Orleans', 'Wichita',
+        'Cleveland', 'Bakersfield', 'Vienna', 'Mödling', 'Linz', 'Neusiedl',
+        'Graz', 'Innsbruck', 'Verling'
+      ];
       
-      for (let i = 0; i < size; i++) {
-        if (i % 3 === 0) {
-          // Compound words
-          words.push(prefixes[i % prefixes.length] + suffixes[i % suffixes.length] + i);
-        } else if (i % 3 === 1) {
-          // Random words
-          words.push(generateWord(5 + (i % 10)));
+      const names = [
+        'John Smith', 'Emma Johnson', 'Michael Williams', 'Sophia Brown', 'James Jones',
+        'Olivia Garcia', 'Robert Miller', 'Ava Davis', 'William Rodriguez', 'Isabella Martinez',
+        'David Hernandez', 'Mia Lopez', 'Richard Gonzalez', 'Charlotte Wilson', 'Joseph Anderson',
+        'Amelia Thomas', 'Thomas Taylor', 'Harper Moore', 'Charles Jackson', 'Evelyn Martin',
+        'Christopher Lee', 'Abigail Perez', 'Daniel Thompson', 'Emily White', 'Matthew Harris',
+        'Peter Müller', 'Francois Dupont', 'Markus Schwarz', 'Lena Meyer', 'Oliver Fischer',
+        'Sophie Schmidt', 'Erich Hoffmann'
+      ];
+      
+      const phrases = [
+        'machine learning', 'artificial intelligence', 'data science', 'web development',
+        'mobile application', 'cloud computing', 'database management', 'user interface',
+        'software engineering', 'computer vision', 'natural language', 'deep learning',
+        'neural network', 'big data', 'cyber security', 'blockchain technology',
+        'quantum computing', 'internet of things', 'augmented reality', 'virtual reality',
+        'virtual insanity'
+      ];
+      
+      const prefixes = [
+        'test', 'data', 'user', 'admin', 'system', 'app', 'web', 'api',
+        'service', 'client', 'auth', 'config', 'handler', 'manager',
+        'controller', 'provider', 'factory', 'helper', 'util', 'processor',
+        'validator', 'formatter', 'parser'
+      ];
+      
+      const suffixes = [
+        'handler', 'manager', 'service', 'controller', 'provider', 'factory',
+        'helper', 'util', 'processor', 'validator', 'formatter', 'parser', 'utils'
+      ];
+
+      // First, add all base items (guaranteed unique)
+      cities.forEach(city => wordsSet.add(city));
+      names.forEach(name => wordsSet.add(name));
+      phrases.forEach(phrase => wordsSet.add(phrase));
+
+      // Generate unique compound words and random words until we reach target size
+      let counter = 0;
+      while (wordsSet.size < size) {
+        const type = counter % 3;
+        
+        if (type === 0) {
+          // API-style compound words with unique numbers
+          const word = prefixes[counter % prefixes.length] + 
+                      suffixes[counter % suffixes.length] + 
+                      counter;
+          wordsSet.add(word);
+        } else if (type === 1) {
+          // Underscore-separated with unique numbers
+          const word = prefixes[counter % prefixes.length] + '_' + 
+                      suffixes[(counter + 1) % suffixes.length] + '_' + 
+                      counter;
+          wordsSet.add(word);
         } else {
-          // Mixed
-          words.push(prefixes[i % prefixes.length] + '_' + generateWord(5));
+          // Random technical terms (naturally unique)
+          wordsSet.add(generateWord(5 + (counter % 10)));
         }
+        counter++;
       }
-      
-      return words;
+
+      return Array.from(wordsSet);
     }
 
-    // Generate test queries
+    // Generate diverse test queries with realistic patterns
     function generateQueries(dataset, count) {
       const queries = [];
-      const queryTypes = ['exact', 'prefix', 'fuzzy', 'partial'];
-      
+      const queryTypes = ['exact', 'prefix', 'fuzzy', 'partial', 'phrase', 'city', 'name', 'technical'];
+
+      // Predefined realistic queries
+      const realisticQueries = [
+        'New Yor', 'Los Angel', 'San Fran', 'Chicag', // City prefixes
+        'John Smit', 'Emma John', 'Michael Will', // Name prefixes
+        'machine learn', 'artificial intel', 'data scien', // Phrase prefixes
+        'api_controller', 'systemservice', 'userhandler', // Technical terms
+        'machne learning', 'artifical intelligence', 'dta science', // Typos
+        'Nwe York', 'Los Angelos', 'Chicgo', // City typos
+        'Jhon Smith', 'Ema Johnson', 'Micheal Williams', // Name typos
+        'api', 'system', 'Toledo', 'user', 'data', 'web', 'service', // Short queries
+        'api_cntrlll', 'controller1234', 'handler5678', 'service9012', 'hanler5678', // API with numbers
+        'San', 'Los', 'New', 'Fort', 'Colorado', 'Viena', 'Vienna', 'Lin', // City partials
+      ];
+
       for (let i = 0; i < count; i++) {
-        const randomWord = dataset[Math.floor(Math.random() * dataset.length)];
-        const queryType = queryTypes[i % queryTypes.length];
-        
-        switch (queryType) {
-          case 'exact':
-            queries.push(randomWord);
-            break;
-          case 'prefix':
-            queries.push(randomWord.substring(0, 3 + (i % 5)));
-            break;
-          case 'fuzzy':
-            // Introduce typo
-            const typoWord = randomWord.split('');
-            if (typoWord.length > 2) {
-              const pos = Math.floor(Math.random() * typoWord.length);
-              typoWord[pos] = generateWord(1);
-            }
-            queries.push(typoWord.join(''));
-            break;
-          case 'partial':
-            const start = Math.floor(Math.random() * (randomWord.length - 3));
-            queries.push(randomWord.substring(start, start + 4));
-            break;
+        // Mix realistic queries with generated ones
+        if (i < realisticQueries.length && i < count / 2) {
+          queries.push(realisticQueries[i]);
+        } else {
+          const randomWord = dataset[Math.floor(Math.random() * dataset.length)];
+          const queryType = queryTypes[i % queryTypes.length];
+
+          switch (queryType) {
+            case 'exact':
+              queries.push(randomWord);
+              break;
+            case 'prefix':
+              const prefixLen = Math.min(randomWord.length - 1, 3 + (i % 6));
+              queries.push(randomWord.substring(0, prefixLen));
+              break;
+            case 'fuzzy':
+              // Introduce realistic typo
+              const typoWord = randomWord.split('');
+              if (typoWord.length > 3) {
+                const pos = 1 + Math.floor(Math.random() * (typoWord.length - 2));
+                // Swap, delete, or replace
+                const typoType = i % 3;
+                if (typoType === 0 && pos < typoWord.length - 1) {
+                  // Swap adjacent chars
+                  [typoWord[pos], typoWord[pos + 1]] = [typoWord[pos + 1], typoWord[pos]];
+                } else if (typoType === 1) {
+                  // Delete char
+                  typoWord.splice(pos, 1);
+                } else {
+                  // Replace char
+                  typoWord[pos] = generateWord(1);
+                }
+              }
+              queries.push(typoWord.join(''));
+              break;
+            case 'partial':
+              if (randomWord.length > 4) {
+                const start = Math.floor(Math.random() * (randomWord.length - 4));
+                queries.push(randomWord.substring(start, start + 4 + (i % 4)));
+              } else {
+                queries.push(randomWord);
+              }
+              break;
+            case 'phrase':
+            case 'city':
+            case 'name':
+            case 'technical':
+              // Use word as-is or with prefix
+              queries.push(randomWord.substring(0, Math.min(randomWord.length, 5 + (i % 5))));
+              break;
+          }
         }
       }
-      
+
       return queries;
     }
 
@@ -422,65 +554,66 @@
     async function runTest() {
       runTestButton.disabled = true;
       progressContainer.classList.remove('hidden');
-      
+
       const datasetSize = parseInt(datasetSizeInput.value);
       const performanceMode = performanceModeSelect.value;
       const queryCount = parseInt(queryCountInput.value);
-      
+
       try {
         // Step 1: Generate dataset
         updateProgress(5, 'Generating dataset...');
         await new Promise(resolve => setTimeout(resolve, 100));
         const dataset = generateDataset(datasetSize);
-        
+
         // Step 2: Generate queries
         updateProgress(10, 'Generating test queries...');
         await new Promise(resolve => setTimeout(resolve, 100));
         const queries = generateQueries(dataset, queryCount);
-        
+
         // Step 3: Test FuzzyFindJS
         updateProgress(20, 'Building FuzzyFindJS index...');
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         const fuzzyBuildStart = performance.now();
         fuzzyIndex = FuzzyFindJS.buildFuzzyIndex(dataset, {
           config: {
             performance: performanceMode,
             maxResults: 10,
-            languages: ['english']  // Single language for fair comparison
+            languages: ['english'],  // Single language for fair comparison
+            features: ['phonetic', 'compound', 'partial-words', 'phrase-matching']  // Enable all features for quality
           }
         });
         const fuzzyBuildTime = performance.now() - fuzzyBuildStart;
-        
+
         updateProgress(35, 'Running FuzzyFindJS queries...');
         const fuzzyQueryTimes = [];
         const fuzzySampleResults = [];
-        
+
         for (let i = 0; i < queries.length; i++) {
           const queryStart = performance.now();
           const results = FuzzyFindJS.getSuggestions(fuzzyIndex, queries[i], 10);
           const queryTime = performance.now() - queryStart;
           fuzzyQueryTimes.push(queryTime);
-          
-          // Capture first 20 results for display
-          if (i < 20) {
+
+          // Capture up to 50 results for display
+          if (i < Math.min(50, queries.length)) {
             fuzzySampleResults.push({
               query: queries[i],
               results: results.slice(0, 3), // Top 3 results
               time: queryTime
             });
           }
-          
+
           if (i % 10 === 0) {
             updateProgress(35 + (i / queries.length) * 15, `FuzzyFindJS: ${i}/${queries.length}`);
             await new Promise(resolve => setTimeout(resolve, 0));
           }
         }
-        
+
         // Step 4: Test Fuse.js
         updateProgress(50, 'Building Fuse.js index...');
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         const fuseBuildStart = performance.now();
         fuseIndex = new Fuse(dataset, {
           threshold: 0.3,
@@ -488,50 +621,50 @@
           includeScore: true
         });
         const fuseBuildTime = performance.now() - fuseBuildStart;
-        
+
         updateProgress(65, 'Running Fuse.js queries...');
         const fuseQueryTimes = [];
         const fuseSampleResults = [];
-        
+
         for (let i = 0; i < queries.length; i++) {
           const queryStart = performance.now();
           const results = fuseIndex.search(queries[i], { limit: 10 });
           const queryTime = performance.now() - queryStart;
           fuseQueryTimes.push(queryTime);
-          
-          // Capture first 20 results for display
-          if (i < 20) {
+
+          // Capture up to 50 results for display
+          if (i < Math.min(50, queries.length)) {
             fuseSampleResults.push({
               query: queries[i],
               results: results.slice(0, 3).map(r => ({ display: r.item, score: r.score })), // Top 3 results
               time: queryTime
             });
           }
-          
+
           if (i % 10 === 0) {
             updateProgress(65 + (i / queries.length) * 25, `Fuse.js: ${i}/${queries.length}`);
             await new Promise(resolve => setTimeout(resolve, 0));
           }
         }
-        
+
         // Step 5: Calculate statistics
         updateProgress(95, 'Calculating statistics...');
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // FuzzyFindJS stats
         fuzzyQueryTimes.sort((a, b) => a - b);
         const fuzzyAvgQueryTime = fuzzyQueryTimes.reduce((a, b) => a + b, 0) / fuzzyQueryTimes.length;
         const fuzzyQueriesPerSec = 1000 / fuzzyAvgQueryTime;
         const fuzzyIndexSize = JSON.stringify(fuzzyIndex).length;
         const fuzzyTotalTime = fuzzyBuildTime + fuzzyQueryTimes.reduce((a, b) => a + b, 0);
-        
+
         // Fuse.js stats
         fuseQueryTimes.sort((a, b) => a - b);
         const fuseAvgQueryTime = fuseQueryTimes.reduce((a, b) => a + b, 0) / fuseQueryTimes.length;
         const fuseQueriesPerSec = 1000 / fuseAvgQueryTime;
         const fuseIndexSize = JSON.stringify(fuseIndex).length;
         const fuseTotalTime = fuseBuildTime + fuseQueryTimes.reduce((a, b) => a + b, 0);
-        
+
         fuzzyResults = {
           buildTime: fuzzyBuildTime,
           avgQueryTime: fuzzyAvgQueryTime,
@@ -540,7 +673,7 @@
           totalTime: fuzzyTotalTime,
           sampleResults: fuzzySampleResults
         };
-        
+
         fuseResults = {
           buildTime: fuseBuildTime,
           avgQueryTime: fuseAvgQueryTime,
@@ -549,17 +682,17 @@
           totalTime: fuseTotalTime,
           sampleResults: fuseSampleResults
         };
-        
+
         // Step 6: Display results
         updateProgress(100, 'Complete!');
         displayComparisonResults(fuzzyResults, fuseResults);
         displaySampleResults(fuzzySampleResults, fuseSampleResults);
-        
+
         setTimeout(() => {
           progressContainer.classList.add('hidden');
           runTestButton.disabled = false;
         }, 1000);
-        
+
       } catch (error) {
         console.error('Test failed:', error);
         alert('Test failed: ' + error.message);
@@ -573,35 +706,35 @@
       // FuzzyFindJS metrics
       document.getElementById('fuzzyBuildTime').textContent = formatTime(fuzzy.buildTime);
       document.getElementById('fuzzyBuildTime').className = 'text-2xl font-bold ' + getPerformanceClass(fuzzy.buildTime, 100, 500);
-      
+
       document.getElementById('fuzzyAvgQueryTime').textContent = formatTime(fuzzy.avgQueryTime);
       document.getElementById('fuzzyAvgQueryTime').className = 'text-2xl font-bold ' + getPerformanceClass(fuzzy.avgQueryTime);
-      
+
       document.getElementById('fuzzyQueriesPerSec').textContent = Math.round(fuzzy.queriesPerSec).toLocaleString();
       document.getElementById('fuzzyIndexSize').textContent = formatSize(fuzzy.indexSize);
       document.getElementById('fuzzyTotalTime').textContent = formatTime(fuzzy.totalTime);
-      
+
       // Fuse.js metrics
       document.getElementById('fuseBuildTime').textContent = formatTime(fuse.buildTime);
       document.getElementById('fuseBuildTime').className = 'text-2xl font-bold ' + getPerformanceClass(fuse.buildTime, 100, 500);
-      
+
       document.getElementById('fuseAvgQueryTime').textContent = formatTime(fuse.avgQueryTime);
       document.getElementById('fuseAvgQueryTime').className = 'text-2xl font-bold ' + getPerformanceClass(fuse.avgQueryTime);
-      
+
       document.getElementById('fuseQueriesPerSec').textContent = Math.round(fuse.queriesPerSec).toLocaleString();
       document.getElementById('fuseIndexSize').textContent = formatSize(fuse.indexSize);
       document.getElementById('fuseTotalTime').textContent = formatTime(fuse.totalTime);
-      
+
       // Determine winner
       const fuzzyWinner = fuzzy.totalTime < fuse.totalTime;
       document.getElementById('fuzzyWinner').classList.toggle('hidden', !fuzzyWinner);
       document.getElementById('fuseWinner').classList.toggle('hidden', fuzzyWinner);
-      
+
       // Comparison bars
       const maxBuildTime = Math.max(fuzzy.buildTime, fuse.buildTime);
       const maxQueryTime = Math.max(fuzzy.avgQueryTime, fuse.avgQueryTime);
       const maxTotalTime = Math.max(fuzzy.totalTime, fuse.totalTime);
-      
+
       // Build time comparison
       const fuzzyBuildPercent = (fuzzy.buildTime / maxBuildTime * 100);
       const fuseBuildPercent = (fuse.buildTime / maxBuildTime * 100);
@@ -609,12 +742,12 @@
       document.getElementById('fuseBuildBar').style.width = fuseBuildPercent + '%';
       document.getElementById('fuzzyBuildBar').querySelector('span').textContent = formatTime(fuzzy.buildTime);
       document.getElementById('fuseBuildBar').querySelector('span').textContent = formatTime(fuse.buildTime);
-      
+
       const buildDiff = ((Math.abs(fuzzy.buildTime - fuse.buildTime) / Math.max(fuzzy.buildTime, fuse.buildTime)) * 100).toFixed(1);
       const buildFaster = fuzzy.buildTime < fuse.buildTime ? 'FuzzyFindJS' : 'Fuse.js';
       document.getElementById('buildComparison').textContent = `${buildFaster} ${buildDiff}% faster`;
       document.getElementById('buildComparison').className = 'font-semibold ' + (fuzzy.buildTime < fuse.buildTime ? 'text-blue-600' : 'text-orange-600');
-      
+
       // Query time comparison
       const fuzzyQueryPercent = (fuzzy.avgQueryTime / maxQueryTime * 100);
       const fuseQueryPercent = (fuse.avgQueryTime / maxQueryTime * 100);
@@ -622,12 +755,12 @@
       document.getElementById('fuseQueryBar').style.width = fuseQueryPercent + '%';
       document.getElementById('fuzzyQueryBar').querySelector('span').textContent = formatTime(fuzzy.avgQueryTime);
       document.getElementById('fuseQueryBar').querySelector('span').textContent = formatTime(fuse.avgQueryTime);
-      
+
       const queryDiff = ((Math.abs(fuzzy.avgQueryTime - fuse.avgQueryTime) / Math.max(fuzzy.avgQueryTime, fuse.avgQueryTime)) * 100).toFixed(1);
       const queryFaster = fuzzy.avgQueryTime < fuse.avgQueryTime ? 'FuzzyFindJS' : 'Fuse.js';
       document.getElementById('queryComparison').textContent = `${queryFaster} ${queryDiff}% faster`;
       document.getElementById('queryComparison').className = 'font-semibold ' + (fuzzy.avgQueryTime < fuse.avgQueryTime ? 'text-blue-600' : 'text-orange-600');
-      
+
       // Total time comparison
       const fuzzyTotalPercent = (fuzzy.totalTime / maxTotalTime * 100);
       const fuseTotalPercent = (fuse.totalTime / maxTotalTime * 100);
@@ -635,7 +768,7 @@
       document.getElementById('fuseTotalBar').style.width = fuseTotalPercent + '%';
       document.getElementById('fuzzyTotalBar').querySelector('span').textContent = formatTime(fuzzy.totalTime);
       document.getElementById('fuseTotalBar').querySelector('span').textContent = formatTime(fuse.totalTime);
-      
+
       const totalDiff = ((Math.abs(fuzzy.totalTime - fuse.totalTime) / Math.max(fuzzy.totalTime, fuse.totalTime)) * 100).toFixed(1);
       const totalFaster = fuzzy.totalTime < fuse.totalTime ? 'FuzzyFindJS' : 'Fuse.js';
       document.getElementById('totalComparison').textContent = `${totalFaster} ${totalDiff}% faster`;
@@ -647,42 +780,42 @@
       const sampleResultsDiv = document.getElementById('sampleResults');
       const fuzzyResultsDiv = document.getElementById('fuzzyQueryResults');
       const fuseResultsDiv = document.getElementById('fuseQueryResults');
-      
+
       // Show the section
       sampleResultsDiv.classList.remove('hidden');
-      
+
       // Clear previous results
       fuzzyResultsDiv.innerHTML = '';
       fuseResultsDiv.innerHTML = '';
-      
+
       // Display FuzzyFindJS results
       fuzzySamples.forEach((sample, index) => {
         const resultHTML = `
-          <div class="border-l-2 border-blue-400 pl-3 py-2 bg-blue-50 rounded">
+          <div class="border-l-2 border-blue-400 pl-3 py-2 bg-blue-50 rounded h-24 overflow-y-auto">
             <div class="font-semibold text-gray-700 mb-1">
               Query ${index + 1}: "${sample.query}" <span class="text-xs text-gray-500">(${sample.time.toFixed(2)}ms)</span>
             </div>
             <div class="text-xs text-gray-600 space-y-1">
-              ${sample.results.length > 0 
-                ? sample.results.map(r => `<div>→ ${r.display} <span class="text-gray-400">(score: ${r.score.toFixed(2)})</span></div>`).join('')
-                : '<div class="text-gray-400">No results</div>'}
+              ${sample.results.length > 0
+            ? sample.results.map(r => `<div>→ ${r.display} <span class="text-gray-400">(score: ${r.score.toFixed(2)})</span></div>`).join('')
+            : '<div class="text-gray-400">No results</div>'}
             </div>
           </div>
         `;
         fuzzyResultsDiv.innerHTML += resultHTML;
       });
-      
+
       // Display Fuse.js results
       fuseSamples.forEach((sample, index) => {
         const resultHTML = `
-          <div class="border-l-2 border-orange-400 pl-3 py-2 bg-orange-50 rounded">
+          <div class="border-l-2 border-orange-400 pl-3 py-2 bg-orange-50 rounded h-24 overflow-y-auto">
             <div class="font-semibold text-gray-700 mb-1">
               Query ${index + 1}: "${sample.query}" <span class="text-xs text-gray-500">(${sample.time.toFixed(2)}ms)</span>
             </div>
             <div class="text-xs text-gray-600 space-y-1">
-              ${sample.results.length > 0 
-                ? sample.results.map(r => `<div>→ ${r.display} <span class="text-gray-400">(score: ${r.score ? r.score.toFixed(2) : 'N/A'})</span></div>`).join('')
-                : '<div class="text-gray-400">No results</div>'}
+              ${sample.results.length > 0
+            ? sample.results.map(r => `<div>→ ${r.display} <span class="text-gray-400">(score: ${r.score ? r.score.toFixed(2) : 'N/A'})</span></div>`).join('')
+            : '<div class="text-gray-400">No results</div>'}
             </div>
           </div>
         `;
@@ -694,4 +827,5 @@
     runTestButton.addEventListener('click', runTest);
   </script>
 </body>
+
 </html>

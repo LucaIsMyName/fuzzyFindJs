@@ -59,9 +59,14 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
 
   /**
    * Default compound word splitting (override for languages that support it)
+   * Base implementation splits on spaces for multi-word phrases
    */
   splitCompoundWords(word: string): string[] {
-    return [word]; // No splitting by default
+    // Split on spaces for multi-word phrases (e.g., "Los Angeles" → ["Los", "Angeles"])
+    if (word.includes(' ')) {
+      return word.trim().split(/\s+/).filter(part => part.length > 0);
+    }
+    return [word]; // No splitting for single words
   }
 
   /**

@@ -13,14 +13,14 @@ import type {
  */
 export const DEFAULT_MATCH_TYPE_SCORES: MatchTypeScores = {
   exact: 1.0,
-  prefix: 0.7,        // Reduced from 0.9 for better granularity
-  substring: 0.75,    // Boosted from 0.6 - exact substrings should rank high
-  phonetic: 0.5,      // Reduced from 0.8
-  fuzzy: 0.6,         // Reduced from 0.9, will be penalized by distance
-  fuzzyMin: 0.1,      // Reduced from 0.3 for wider range
-  synonym: 0.4,       // Reduced from 0.75
-  compound: 0.6,      // Reduced from 0.9
-  ngram: 0.5,         // Reduced from 0.8
+  prefix: 0.9,        // High score for prefix matches - very relevant
+  substring: 0.8,     // Exact substrings should rank high
+  phonetic: 0.35,     // Much lower - phonetic is weak signal
+  fuzzy: 0.65,        // Reasonable fuzzy score
+  fuzzyMin: 0.3,      // Higher minimum to filter weak fuzzy matches
+  synonym: 0.4,       // Keep synonyms lower
+  compound: 0.75,     // Boost compound matches
+  ngram: 0.3,         // Very low - n-grams are weakest signal
 };
 
 /**
@@ -44,7 +44,7 @@ export const DEFAULT_CONFIG: FuzzyConfig = {
   performance: "balanced",
   maxResults: 10,
   minQueryLength: 2,
-  fuzzyThreshold: 0.3,      // Reduced from 0.75 for better recall
+  fuzzyThreshold: 0.65,     // Higher threshold - filters garbage while keeping quality matches
   maxEditDistance: 2,
   ngramSize: 3,
   enableAlphanumericSegmentation: true, // Enabled by default - opt-out for performance if needed
@@ -63,7 +63,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     performance: "fast",
     features: ["partial-words", "missing-letters"],
     maxEditDistance: 1,
-    fuzzyThreshold: 0.4,      // Reduced from 0.9 for better recall
+    fuzzyThreshold: 0.7,      // High threshold in fast mode for quality
     maxResults: 3,
     enableAlphanumericSegmentation: true, // Enabled in fast mode
     matchTypeScores: {
@@ -78,7 +78,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     performance: "balanced",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 2,
-    fuzzyThreshold: 0.3,      // Reduced from 0.75 for better recall
+    fuzzyThreshold: 0.6,      // Balanced mode - good quality/recall tradeoff
     maxResults: 10,
     enableAlphanumericSegmentation: true,
     // Uses default scoring for balanced performance
@@ -87,7 +87,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     performance: "comprehensive",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 3,
-    fuzzyThreshold: 0.2,      // Reduced from default for maximum recall
+    fuzzyThreshold: 0.5,      // Comprehensive mode - lower but still filters garbage
     maxResults: 20,
     enableAlphanumericSegmentation: true,
     matchTypeScores: {

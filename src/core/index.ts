@@ -52,20 +52,21 @@ import { isFQLQuery, executeFQLQuery } from "../fql/index.js";
 import { isAlphanumeric, extractAlphaPart, extractNumericPart } from "../utils/alphanumeric-segmenter.js";
 import { applyFilters } from "./filters.js";
 import { applySorting } from "./sorting.js";
+import { StringPool } from "../utils/string-pool.js";
 
 /**
  * Builds a fuzzy search index from an array of words or objects.
  * 
  * This is the primary function for creating a searchable index. It processes each word/object
  * through language-specific processors, builds various indices (phonetic, n-gram, synonym),
- * and automatically enables optimizations like inverted index for large datasets (100k+ items).
+ * and automatically enables optimizations like inverted index for large datasets (10k+ items).
  * 
  * @param words - Array of strings to index, or objects with fields to search across
  * @param options - Configuration options for index building
  * @param options.config - Fuzzy search configuration (languages, features, thresholds)
  * @param options.languageProcessors - Custom language processors (overrides default)
  * @param options.onProgress - Callback for tracking indexing progress (processed, total)
- * @param options.useInvertedIndex - Force inverted index usage (auto-enabled for 100k+ words)
+ * @param options.useInvertedIndex - Force inverted index usage (auto-enabled for 10k+ words)
  * @param options.fields - Field names for multi-field search (required when indexing objects)
  * @param options.fieldWeights - Weight multipliers for field scoring (e.g., {title: 2.0, description: 1.0})
  * 
@@ -136,6 +137,10 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
     throw new Error("When indexing objects, you must specify which fields to index via options.fields");
   }
 
+  // OPTIMIZATION: String pooling for memory deduplication
+  // Reuses string instances across the index to reduce memory footprint
+  const stringPool = new StringPool();
+
   const index: FuzzyIndex = {
     base: [],
     variantToBase: new Map(),
@@ -159,9 +164,9 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
   });
 
   // OPTIMIZATION 2: Decide early whether to use inverted index to avoid building redundant structures
-  // Use inverted index for very large datasets (100k+) or when explicitly requested
-  // Hash-based search is fast enough for datasets under 100k items
-  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || config.useBM25 || config.useBloomFilter || words.length >= 100000;
+  // Use inverted index for large datasets (10k+) or when explicitly requested
+  // Inverted index provides better memory efficiency and query speed for large datasets
+  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || config.useBM25 || config.useBloomFilter || words.length >= 10000;
 
   const processedWords = new Set<string>();
   let processed = 0;
@@ -209,7 +214,8 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
         if (processedWords.has(trimmedWord.toLowerCase())) continue;
 
         processedWords.add(trimmedWord.toLowerCase());
-        index.base.push(trimmedWord);
+        // Use string pool to deduplicate strings and reduce memory
+        index.base.push(stringPool.intern(trimmedWord));
 
         // Process with each language processor
         for (const processor of languageProcessors) {

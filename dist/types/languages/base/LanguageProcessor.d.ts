@@ -17,6 +17,7 @@ export declare abstract class BaseLanguageProcessor implements LanguageProcessor
     getPhoneticCode(word: string): string;
     /**
      * Default compound word splitting (override for languages that support it)
+     * Base implementation splits on spaces for multi-word phrases
      */
     splitCompoundWords(word: string): string[];
     /**

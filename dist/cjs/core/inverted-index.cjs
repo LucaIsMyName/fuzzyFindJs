@@ -30,6 +30,7 @@ function buildInvertedIndex(words, languageProcessors, config, featureSet) {
       const doc = {
         id: docId,
         word: trimmedWord,
+        // TODO: Remove in v2.0 - use index.base[docId] instead
         normalized,
         phoneticCode,
         language: processor.language,
@@ -143,15 +144,11 @@ function searchInvertedIndex(invertedIndex, documents, query, processors, config
 function addToPostingList(postings, term, docId) {
   let posting = postings.get(term);
   if (!posting) {
-    posting = { term, docIds: [], docIdSet: /* @__PURE__ */ new Set() };
+    posting = { term, docIds: [] };
     postings.set(term, posting);
   }
-  if (!posting.docIdSet) {
-    posting.docIdSet = new Set(posting.docIds);
-  }
-  if (!posting.docIdSet.has(docId)) {
+  if (!posting.docIds.includes(docId)) {
     posting.docIds.push(docId);
-    posting.docIdSet.add(docId);
   }
 }
 function findExactMatchesInverted(query, invertedIndex, documents, matches, language) {

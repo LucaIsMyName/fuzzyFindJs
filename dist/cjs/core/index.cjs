@@ -17,6 +17,7 @@ const index$1 = require("../fql/index.cjs");
 const alphanumericSegmenter = require("../utils/alphanumeric-segmenter.cjs");
 const filters = require("./filters.cjs");
 const sorting = require("./sorting.cjs");
+const stringPool = require("../utils/string-pool.cjs");
 function buildFuzzyIndex(words = [], options = {}) {
   const userSpecifiedLanguages = options.config?.languages;
   const shouldAutoDetect = !userSpecifiedLanguages || userSpecifiedLanguages.includes("auto");
@@ -37,6 +38,7 @@ function buildFuzzyIndex(words = [], options = {}) {
   if (isObjectArray && !hasFields) {
     throw new Error("When indexing objects, you must specify which fields to index via options.fields");
   }
+  const stringPool$1 = new stringPool.StringPool();
   const index$12 = {
     base: [],
     variantToBase: /* @__PURE__ */ new Map(),
@@ -54,7 +56,7 @@ function buildFuzzyIndex(words = [], options = {}) {
   languageProcessors.forEach((processor) => {
     index$12.languageProcessors.set(processor.language, processor);
   });
-  const shouldUseInvertedIndex = options.useInvertedIndex || config$1.useInvertedIndex || config$1.useBM25 || config$1.useBloomFilter || words.length >= 1e5;
+  const shouldUseInvertedIndex = options.useInvertedIndex || config$1.useInvertedIndex || config$1.useBM25 || config$1.useBloomFilter || words.length >= 1e4;
   const processedWords = /* @__PURE__ */ new Set();
   let processed = 0;
   if (!shouldUseInvertedIndex) {
@@ -82,7 +84,7 @@ function buildFuzzyIndex(words = [], options = {}) {
         const trimmedWord = word.trim();
         if (processedWords.has(trimmedWord.toLowerCase())) continue;
         processedWords.add(trimmedWord.toLowerCase());
-        index$12.base.push(trimmedWord);
+        index$12.base.push(stringPool$1.intern(trimmedWord));
         for (const processor of languageProcessors) {
           processWordWithProcessor(trimmedWord, processor, index$12, config$1, featureSet);
         }
