@@ -297,6 +297,17 @@ function getSuggestions(index, query, maxResults, options = {}) {
     }
   }
   let results = Array.from(matches.values()).map((match) => createSuggestionResult(match, processedQuery, threshold, index, options)).filter((result) => result !== null);
+  if (options.debug) {
+    console.log(`
+🔍 Debug: Query "${processedQuery}"`);
+    console.log(`📊 Total matches found: ${matches.size}`);
+    console.log(`📊 After threshold filter: ${results.length}`);
+    console.log(`
+Top 10 matches before sorting:`);
+    results.slice(0, 10).forEach((r, i) => {
+      console.log(`  ${i + 1}. ${r.display} (score: ${r.score.toFixed(2)}, type: ${r._debug_matchType})`);
+    });
+  }
   if (options.filters) {
     results = applyFilters(results, options.filters);
   }

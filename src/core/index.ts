@@ -612,6 +612,18 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
     .map((match) => createSuggestionResult(match, processedQuery, threshold, index, options))
     .filter((result): result is SuggestionResult => result !== null);
 
+  // Debug logging if enabled
+  if (options.debug) {
+    console.log(`\n🔍 Debug: Query "${processedQuery}"`);
+    console.log(`📊 Total matches found: ${matches.size}`);
+    console.log(`📊 After threshold filter: ${results.length}`);
+    console.log(`\nTop 10 matches before sorting:`);
+    results.slice(0, 10).forEach((r, i) => {
+      // @ts-ignore - _debug_matchType is added dynamically
+      console.log(`  ${i + 1}. ${r.display} (score: ${r.score.toFixed(2)}, type: ${r._debug_matchType})`);
+    });
+  }
+
   // Apply filters if provided
   if (options.filters) {
     results = applyFilters(results, options.filters);
