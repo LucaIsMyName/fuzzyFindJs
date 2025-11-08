@@ -84,11 +84,26 @@ export abstract class BaseLanguageProcessor implements LanguageProcessor {
     }
 
     // Add partial variants for longer words
+    // OPTIMIZATION: Limit prefix generation based on word length to reduce index size
     if (normalized.length > 4) {
-      // OPTIMIZATION: In fast mode, generate every 2nd prefix to reduce index size by ~50%
-      const step = performanceMode === 'fast' ? 2 : 1;
+      // Determine max prefixes based on word length and performance mode
+      let maxPrefixes: number;
+      if (performanceMode === 'fast') {
+        // Fast mode: minimal prefixes
+        maxPrefixes = normalized.length <= 6 ? 2 : (normalized.length <= 12 ? 3 : 4);
+      } else if (performanceMode === 'comprehensive') {
+        // Comprehensive mode: more prefixes but still limited
+        maxPrefixes = normalized.length <= 6 ? 3 : (normalized.length <= 12 ? 6 : 8);
+      } else {
+        // Balanced mode: moderate prefixes
+        maxPrefixes = normalized.length <= 6 ? 2 : (normalized.length <= 12 ? 4 : 6);
+      }
+      
+      // Generate evenly-spaced prefixes
+      const step = Math.max(1, Math.floor((normalized.length - 3) / maxPrefixes));
       for (let i = 3; i < normalized.length; i += step) {
         variants.add(normalized.slice(0, i));
+        if (variants.size - 2 >= maxPrefixes) break; // -2 for normalized and original
       }
     }
 

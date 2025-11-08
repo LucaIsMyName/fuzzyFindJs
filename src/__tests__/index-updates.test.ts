@@ -100,7 +100,7 @@ describe('Index Updates', () => {
     });
 
     it('should rebuild inverted index if present', () => {
-      const largeDataset = Array.from({ length: 15000 }, (_, i) => `word${i}`);
+      const largeDataset = Array.from({ length: 50000 }, (_, i) => `word${i}`);
       const index = buildFuzzyIndex(largeDataset);
       
       expect(index.invertedIndex).toBeDefined();
@@ -274,7 +274,7 @@ describe('Index Updates', () => {
     });
 
     it('should rebuild inverted index if present', () => {
-      const largeDataset = Array.from({ length: 15000 }, (_, i) => `word${i}`);
+      const largeDataset = Array.from({ length: 50000 }, (_, i) => `word${i}`);
       const index = buildFuzzyIndex(largeDataset);
       
       expect(index.invertedIndex).toBeDefined();

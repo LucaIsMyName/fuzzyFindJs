@@ -65,9 +65,18 @@ class BaseLanguageProcessor {
       }
     }
     if (normalized.length > 4) {
-      const step = performanceMode === "fast" ? 2 : 1;
+      let maxPrefixes;
+      if (performanceMode === "fast") {
+        maxPrefixes = normalized.length <= 6 ? 2 : normalized.length <= 12 ? 3 : 4;
+      } else if (performanceMode === "comprehensive") {
+        maxPrefixes = normalized.length <= 6 ? 3 : normalized.length <= 12 ? 6 : 8;
+      } else {
+        maxPrefixes = normalized.length <= 6 ? 2 : normalized.length <= 12 ? 4 : 6;
+      }
+      const step = Math.max(1, Math.floor((normalized.length - 3) / maxPrefixes));
       for (let i = 3; i < normalized.length; i += step) {
         variants.add(normalized.slice(0, i));
+        if (variants.size - 2 >= maxPrefixes) break;
       }
     }
     return Array.from(variants);

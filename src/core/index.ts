@@ -58,14 +58,14 @@ import { applySorting } from "./sorting.js";
  * 
  * This is the primary function for creating a searchable index. It processes each word/object
  * through language-specific processors, builds various indices (phonetic, n-gram, synonym),
- * and automatically enables optimizations like inverted index for large datasets (10k+ items).
+ * and automatically enables optimizations like inverted index for large datasets (50k+ items).
  * 
  * @param words - Array of strings to index, or objects with fields to search across
  * @param options - Configuration options for index building
  * @param options.config - Fuzzy search configuration (languages, features, thresholds)
  * @param options.languageProcessors - Custom language processors (overrides default)
  * @param options.onProgress - Callback for tracking indexing progress (processed, total)
- * @param options.useInvertedIndex - Force inverted index usage (auto-enabled for 10k+ words)
+ * @param options.useInvertedIndex - Force inverted index usage (auto-enabled for 50k+ words)
  * @param options.fields - Field names for multi-field search (required when indexing objects)
  * @param options.fieldWeights - Weight multipliers for field scoring (e.g., {title: 2.0, description: 1.0})
  * 
@@ -159,8 +159,9 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
   });
 
   // OPTIMIZATION 2: Decide early whether to use inverted index to avoid building redundant structures
-  // Use inverted index for large datasets (10k+) or when explicitly requested
-  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || config.useBM25 || config.useBloomFilter || words.length >= 10000;
+  // Use inverted index for very large datasets (100k+) or when explicitly requested
+  // Hash-based search is fast enough for datasets under 100k items
+  const shouldUseInvertedIndex = options.useInvertedIndex || config.useInvertedIndex || config.useBM25 || config.useBloomFilter || words.length >= 100000;
 
   const processedWords = new Set<string>();
   let processed = 0;
@@ -280,13 +281,16 @@ function processWordWithProcessor(word: string, processor: LanguageProcessor, in
   }
 
   // Generate n-grams for partial matching (normalized to lowercase)
-  // OPTIMIZATION 3: Limit n-gram generation in fast mode to reduce index size
-  const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 10;
-  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
-  const ngrams = generateNgrams(ngramSource.toLowerCase(), config.ngramSize);
-  ngrams.forEach((ngram: string) => {
-    addToVariantMap(index.ngramIndex, ngram, word);
-  });
+  // OPTIMIZATION 3: Skip n-grams for very short words (≤3 chars) - fuzzy matching handles these well
+  // Also limit n-gram generation in fast mode to reduce index size
+  if (normalized.length > 3) {
+    const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 10;
+    const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+    const ngrams = generateNgrams(ngramSource.toLowerCase(), config.ngramSize);
+    ngrams.forEach((ngram: string) => {
+      addToVariantMap(index.ngramIndex, ngram, word);
+    });
+  }
 
   // Handle compound words (normalized to lowercase)
   if (featureSet.has("compound") && processor.supportedFeatures.includes("compound")) {
@@ -352,13 +356,16 @@ function processWordWithProcessorAndField(fieldValue: string, baseId: string, fi
   }
 
   // Generate n-grams for partial matching (normalized to lowercase)
-  // OPTIMIZATION 3: Limit n-gram generation in fast mode to reduce index size
-  const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 15;
-  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
-  const ngrams = generateNgrams(ngramSource.toLowerCase(), config.ngramSize);
-  ngrams.forEach((ngram: string) => {
-    addToVariantMapWithField(index.ngramIndex, ngram, baseId, fieldName);
-  });
+  // OPTIMIZATION 3: Skip n-grams for very short words (≤3 chars) - fuzzy matching handles these well
+  // Also limit n-gram generation in fast mode to reduce index size
+  if (normalized.length > 3) {
+    const shouldLimitNgrams = config.performance === 'fast' && normalized.length > 15;
+    const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+    const ngrams = generateNgrams(ngramSource.toLowerCase(), config.ngramSize);
+    ngrams.forEach((ngram: string) => {
+      addToVariantMapWithField(index.ngramIndex, ngram, baseId, fieldName);
+    });
+  }
 
   // Handle compound words (normalized to lowercase)
   if (featureSet.has("compound") && processor.supportedFeatures.includes("compound")) {

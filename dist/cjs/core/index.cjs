@@ -54,7 +54,7 @@ function buildFuzzyIndex(words = [], options = {}) {
   languageProcessors.forEach((processor) => {
     index$12.languageProcessors.set(processor.language, processor);
   });
-  const shouldUseInvertedIndex = options.useInvertedIndex || config$1.useInvertedIndex || config$1.useBM25 || config$1.useBloomFilter || words.length >= 1e4;
+  const shouldUseInvertedIndex = options.useInvertedIndex || config$1.useInvertedIndex || config$1.useBM25 || config$1.useBloomFilter || words.length >= 1e5;
   const processedWords = /* @__PURE__ */ new Set();
   let processed = 0;
   if (!shouldUseInvertedIndex) {
@@ -128,12 +128,14 @@ function processWordWithProcessor(word, processor, index2, config2, featureSet) 
       addToVariantMap(index2.phoneticToBase, phoneticCode, word);
     }
   }
-  const shouldLimitNgrams = config2.performance === "fast" && normalized.length > 10;
-  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
-  const ngrams = generateNgrams(ngramSource.toLowerCase(), config2.ngramSize);
-  ngrams.forEach((ngram) => {
-    addToVariantMap(index2.ngramIndex, ngram, word);
-  });
+  if (normalized.length > 3) {
+    const shouldLimitNgrams = config2.performance === "fast" && normalized.length > 10;
+    const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+    const ngrams = generateNgrams(ngramSource.toLowerCase(), config2.ngramSize);
+    ngrams.forEach((ngram) => {
+      addToVariantMap(index2.ngramIndex, ngram, word);
+    });
+  }
   if (featureSet.has("compound") && processor.supportedFeatures.includes("compound")) {
     const compoundParts = processor.splitCompoundWords(word);
     compoundParts.forEach((part) => {
@@ -179,12 +181,14 @@ function processWordWithProcessorAndField(fieldValue, baseId, fieldName, process
       addToVariantMapWithField(index2.phoneticToBase, phoneticCode, baseId);
     }
   }
-  const shouldLimitNgrams = config2.performance === "fast" && normalized.length > 15;
-  const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
-  const ngrams = generateNgrams(ngramSource.toLowerCase(), config2.ngramSize);
-  ngrams.forEach((ngram) => {
-    addToVariantMapWithField(index2.ngramIndex, ngram, baseId);
-  });
+  if (normalized.length > 3) {
+    const shouldLimitNgrams = config2.performance === "fast" && normalized.length > 15;
+    const ngramSource = shouldLimitNgrams ? normalized.substring(0, 15) : normalized;
+    const ngrams = generateNgrams(ngramSource.toLowerCase(), config2.ngramSize);
+    ngrams.forEach((ngram) => {
+      addToVariantMapWithField(index2.ngramIndex, ngram, baseId);
+    });
+  }
   if (featureSet.has("compound") && processor.supportedFeatures.includes("compound")) {
     const parts = processor.splitCompoundWords(fieldValue);
     parts.forEach((part) => {
