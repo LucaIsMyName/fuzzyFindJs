@@ -1,23 +1,26 @@
 # 🔍 fuzzyfindjs
 
-A powerful, multi-language optimized fuzzy search library with phonetic matching, compound word splitting, and intelligent synonym support. Built for TypeScript with zero dependencies.
+
 
 [![NPM Version](https://img.shields.io/npm/v/fuzzyfindjs)](https://www.npmjs.com/package/fuzzyfindjs)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/fuzzyfindjs)](https://bundlephobia.com/package/fuzzyfindjs)
 
-## ✨ Features
+## 🌞 Introduction
+
+> **⚠️ BETA**: `fuzzyFindJS` is in Beta-State. Be aware of potential quality, security and performance concerns when using `fuzzyFindJS`.
+
+A multi-language fuzzy search library with phonetic matching, compound word splitting, and intelligent synonym support.
+
+### ✨ Features
 
 - 🌍 **Multi-language Support**: German, English, Spanish, French with auto-detection and language-specific optimizations
 - 🔊 **Phonetic Matching**: Kölner Phonetik (German), Soundex-like algorithms for other languages
 - 🧩 **Compound Word Splitting**: Intelligent German compound word decomposition
 - 📚 **Synonym Support**: Built-in synonyms + custom synonym dictionaries
-- ⚡ **Performance Optimized**: Three performance modes (fast, balanced, comprehensive)
 - 🚀 **Inverted Index**: Auto-enabled for large datasets (10k+ words) - 10-100x faster for 1M+ words
 - 🎨 **Match Highlighting**: Show WHERE matches occurred with position tracking
-- ⚡ **Search Caching**: 10-100x faster repeated queries with LRU cache
-- 💾 **Index Serialization**: Save/load indices for instant startup (100x faster)
 - 🔄 **Batch Search**: Search multiple queries at once with auto-deduplication
 - 🌍 **Accent Normalization**: Automatic handling of accented characters (café ↔ cafe)
 - ⚖️ **Field Weighting**: Multi-field search with weighted scoring (title > description)
@@ -29,13 +32,10 @@ A powerful, multi-language optimized fuzzy search library with phonetic matching
 - 📊 **BM25 Scoring**: Industry-standard relevance ranking for better search results
 - 🎯 **Bloom Filters**: 50-70% faster negative lookups for large datasets
 - 🔍 **FQL (Fuzzy Query Language)**: Boolean operators (AND, OR, NOT) for complex queries
-- 💾 **Memory Pooling**: Reduce GC pressure by 30-50% with object/array reuse
 - 🔤 **Phrase Parsing**: Parse complex queries with quoted phrases ("new york")
 - 🌍 **Language Detection**: Auto-detect languages from text with confidence scores
 - 🔄 **Incremental Updates**: Add/remove items 10-100x faster than rebuilding
 - 📊 **Configurable Scoring**: Customizable thresholds and edit distances
-- 🛒 **E-Commerce Ready**: Built-in filtering (price, category, etc.) and custom sorting
-- 🎨 **TypeScript First**: Full type safety with comprehensive type definitions
 - 📦 **Zero Dependencies**: Lightweight and self-contained
 
 ## 📦 Installation
@@ -130,8 +130,9 @@ The demo opens at `http://localhost:3000` with:
 - ⚙️ Live configuration controls (performance modes, features, thresholds)
 - 📊 Performance metrics and debug information
 - 💾 Auto-saves your settings to localStorage
-
-Perfect for testing different configurations and understanding how the fuzzy search works!
+- `apps/speed-test.html`: Comparison between different performance modes and with fuse.js
+- `apps/ajax-search.html`: AJAX search example with a Shop-Like Interface
+- `apps/search-text.html`: Search a large text corpus adn highlight matching Words. FQL is enabled.
 
 ## 🚀 Quick Start
 
@@ -144,7 +145,8 @@ const search = createFuzzySearch([
   'Pharmacy',
   'Doctor',
   'Dentist',
-  'Kindergarten'
+  'Kindergarten',
+  // ...
 ]);
 
 // Search with typos, partial words, phonetic similarity
@@ -167,7 +169,7 @@ const results3 = germanSearch.search('krankenh');
 // [{ display: 'Krankenhaus', score: 0.95, ... }]
 ```
 
-## 🎛️ API Documentation
+## 🎛️ API
 
 ### Core Functions
 
@@ -207,7 +209,7 @@ const index = buildFuzzyIndex(cities, {
 });
 ```
 
-**Example 2: Multi-field objects (e-commerce)**
+**Example 2: Multi-field objects**
 ```typescript
 const products = [
   { name: 'iPhone 15', brand: 'Apple', price: 999, category: 'Phones' },
@@ -348,7 +350,7 @@ results.forEach((suggestions, query) => {
 
 #### `updateIndex(index, newWords)`
 
-Incrementally adds new items to an existing index. 10-100x faster than rebuilding.
+Incrementally adds new items to an existing index.
 
 **Signature:**
 ```typescript
@@ -415,7 +417,7 @@ const results = getSuggestions(index, 'ban'); // Returns empty
 
 #### `createFuzzySearch(dictionary, options?)`
 
-Convenience wrapper that combines index building and searching into a single object.
+Wrapper that combines index building and searching into a single object.
 
 **Signature:**
 ```typescript
@@ -489,6 +491,22 @@ interface FuzzyConfig {
   
   // Custom normalization function
   customNormalizer?: (word: string) => string;
+
+  // Enable FQL
+  enableFQL?: boolean;
+
+  // Enable Inverted Index
+  enableInvertedIndex?: boolean;
+
+  // Enable Highlighting
+  enableHighlighting?: boolean;
+
+  // Enable Debugging
+  debug?: boolean;
+
+  // Enable Progress Callback
+  onProgress?: (processed: number, total: number) => void;
+
 }
 ```
 
@@ -2450,7 +2468,8 @@ const results = search.search('typescript');
 
 ### 15. BM25 Relevance Scoring
 
-Industry-standard probabilistic ranking for better search relevance:
+Probabilistic ranking for better search relevance. <br>
+More Info: [Okapi BM25 - Wikipedia](https://en.wikipedia.org/wiki/Okapi_BM25)
 
 ```typescript
 import { buildFuzzyIndex, getSuggestions } from 'fuzzyfindjs';
@@ -2500,7 +2519,7 @@ const results = getSuggestions(index, 'search', 5);
 
 ### 16. Bloom Filters for Performance
 
-Probabilistic data structure for 50-70% faster negative lookups:
+Probabilistic data structure for 50-70% faster negative lookups<br> More Info: [Bloom Filters - Wikipedia](https://en.wikipedia.org/wiki/Bloom_filter)
 
 ```typescript
 import { buildFuzzyIndex, getSuggestions } from 'fuzzyfindjs';
@@ -2554,7 +2573,7 @@ getSuggestions(index, 'nonexistent_term');  // ~0.5ms (fast rejection)
 
 ### 18. Memory Pooling for Performance
 
-Reduce garbage collection overhead by reusing objects and arrays:
+Reduce garbage collection overhead by reusing objects and arrays<br> More Info: [Memory Pooling - Wikipedia](https://en.wikipedia.org/wiki/Memory_pooling):
 
 ```typescript
 import { ObjectPool, ArrayPool, MapPool, SetPool, withPooledArray } from 'fuzzyfindjs';
@@ -3714,13 +3733,9 @@ All major functions include comprehensive JSDoc:
 - `removeFromIndex()` - Remove items from index
 - Plus all utility functions (serialization, highlighting, caching, etc.)
 
-## To Do's
+## 📎 To Do's
 
 - [ ] Add (optional) dictionary imports for english, german ,spanish, france, ... as json files with the eg 500 most common expressions to be used as dictionary
   - [ ] implemenent a native way to use these dictionary ON top of your own OR instead
-- [ ] Numbers inside search -> need to be done way better
 - [ ] Make global weighting/Scoring more nuanced and try out different combinations
-- [ ] Make signs "_" and "*" work better inside words like eg. "api_controller1234"
-- [ ] Make Numbers work better inside words like eg. "api_controller1234"
-- [ ] make phrases/phrasing better/fine-grained
-- [ ] make features a plugin system and devloper can add custon features when using fuzzyFindJs (own additional logic and the place/time where it runs (before in between or after the others))
+- [ ] make "features" a "plugin system" and devwloper can add custom features when using fuzzyFindJs (create own additional logic and the place/time where it runs (before in between or after the other features))
