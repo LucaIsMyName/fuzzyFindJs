@@ -251,7 +251,7 @@ describe("BM25 Scoring", () => {
         config: {
           languages: ["english"],
           useBM25: true,
-          fuzzyThreshold: 0.3, // Lower threshold for BM25 tests
+          fuzzyThreshold: 0.1, // Very low threshold for BM25 tests with new scoring
           // useInvertedIndex is automatically enabled when useBM25 is true
         },
       });
@@ -275,13 +275,14 @@ describe("BM25 Scoring", () => {
         config: {
           languages: ["english"],
           useBM25: true,
-          fuzzyThreshold: 0.3,
+          fuzzyThreshold: 0.1, // Very low threshold for new scoring
         },
       });
 
       const results = getSuggestions(index, "search", 5);
 
       // Document with highest term frequency should rank high
+      expect(results.length).toBeGreaterThan(0);
       const topResult = results[0];
       expect(topResult.display).toContain("search");
     });
@@ -309,7 +310,7 @@ describe("BM25 Scoring", () => {
         config: {
           languages: ["english"],
           useBM25: true,
-          fuzzyThreshold: 0.3,
+          fuzzyThreshold: 0.1, // Very low threshold for new scoring
           bm25Config: {
             k1: 2.0, // Higher saturation
             b: 0.5, // Less length normalization

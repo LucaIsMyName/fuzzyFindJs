@@ -1,6 +1,6 @@
 {
   "name": "fuzzyfindjs",
-  "version": "1.0.29",
+  "version": "1.0.30",
   "description": "A multi-language optimized fuzzy search library with phonetic matching, compound word splitting, and synonym support",
   "type": "module",
   "main": "./dist/cjs/index.js",
@@ -63,6 +63,7 @@
   "homepage": "https://github.com/LucaIsMyName/fuzzyfindjs#readme",
   "devDependencies": {
     "@types/node": "^22.18.13",
+    "@vitest/ui": "^2.1.9",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
     "vite-plugin-dts": "^4.5.4",

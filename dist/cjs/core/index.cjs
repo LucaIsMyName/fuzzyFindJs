@@ -441,12 +441,20 @@ function findNgramMatches(query, index2, matches, language, ngramSize) {
   });
 }
 function findFuzzyMatches(query, index2, matches, processor, config2) {
-  const maxDistance = config2.maxEditDistance;
+  let maxDistance = config2.maxEditDistance;
+  if (query.length <= 3) {
+    maxDistance = Math.max(maxDistance, 2);
+  } else if (query.length <= 4) {
+    maxDistance = Math.max(maxDistance, 2);
+  }
   for (const [variant, words] of index2.variantToBase.entries()) {
-    if (Math.abs(variant.length - query.length) <= maxDistance) {
+    const lengthDiff = Math.abs(variant.length - query.length);
+    const maxLengthDiff = query.length <= 3 ? 5 : query.length <= 4 ? 4 : maxDistance;
+    if (lengthDiff <= maxLengthDiff) {
       const useTranspositions = index2.config.features?.includes("transpositions");
       const distance = useTranspositions ? levenshtein.calculateDamerauLevenshteinDistance(query, variant, maxDistance) : levenshtein.calculateLevenshteinDistance(query, variant, maxDistance);
-      if (distance <= maxDistance) {
+      const distanceThreshold = query.length <= 3 ? 2 : maxDistance;
+      if (distance <= distanceThreshold) {
         words.forEach((word) => {
           const existingMatch = matches.get(word);
           if (!existingMatch || existingMatch.matchType !== "exact" && existingMatch.matchType !== "prefix" && (existingMatch.editDistance || Infinity) > distance) {

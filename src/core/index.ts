@@ -802,15 +802,30 @@ function findNgramMatches(query: string, index: FuzzyIndex, matches: Map<string,
  * Find fuzzy matches using edit distance
  */
 function findFuzzyMatches(query: string, index: FuzzyIndex, matches: Map<string, SearchMatch>, processor: LanguageProcessor, config: FuzzyConfig): void {
-  const maxDistance = config.maxEditDistance;
+  // Adaptive max distance for short queries
+  let maxDistance = config.maxEditDistance;
+  
+  // For very short queries (3-4 chars), be more lenient
+  if (query.length <= 3) {
+    maxDistance = Math.max(maxDistance, 2);
+  } else if (query.length <= 4) {
+    maxDistance = Math.max(maxDistance, 2);
+  }
 
   for (const [variant, words] of index.variantToBase.entries()) {
-    if (Math.abs(variant.length - query.length) <= maxDistance) {
+    // Improved length check for short queries - be more lenient
+    const lengthDiff = Math.abs(variant.length - query.length);
+    const maxLengthDiff = query.length <= 3 ? 5 : (query.length <= 4 ? 4 : maxDistance);
+    
+    if (lengthDiff <= maxLengthDiff) {
       // Use Damerau-Levenshtein if transpositions feature is enabled
       const useTranspositions = index.config.features?.includes("transpositions");
       const distance = useTranspositions ? calculateDamerauLevenshteinDistance(query, variant, maxDistance) : calculateLevenshteinDistance(query, variant, maxDistance);
 
-      if (distance <= maxDistance) {
+      // Adaptive distance threshold for short queries
+      const distanceThreshold = query.length <= 3 ? 2 : maxDistance;
+      
+      if (distance <= distanceThreshold) {
         words.forEach((word) => {
           const existingMatch = matches.get(word);
           // Don't replace exact or prefix matches with fuzzy matches

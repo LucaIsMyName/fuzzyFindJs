@@ -129,7 +129,7 @@ function formatHighlightedHTML(text, highlights, className = "highlight") {
       result += escapeHTML(text.slice(lastEnd, highlight.start));
     }
     const highlightedText = text.slice(highlight.start, highlight.end);
-    result += `<mark class="${className} ${className}--${highlight.type}">${escapeHTML(highlightedText)}</mark>`;
+    result += `<mark ${highlight.type === "exact" ? 'data-type="exact"' : ""} class="${className} ${className}--${highlight.type}">${escapeHTML(highlightedText)}</mark>`;
     lastEnd = highlight.end;
   }
   if (lastEnd < text.length) {

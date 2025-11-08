@@ -2,21 +2,22 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const DEFAULT_MATCH_TYPE_SCORES = {
   exact: 1,
-  prefix: 0.9,
-  substring: 0.85,
-  // Slightly lower than prefix
-  phonetic: 0.8,
-  // Slightly lower
-  fuzzy: 0.9,
-  // High base score but will be penalized by distance
-  fuzzyMin: 0.3,
-  // Not too low
-  synonym: 0.75,
-  // Good score for synonyms
-  compound: 0.9,
-  // Good score for compound words
-  ngram: 0.8
-  // Good score for n-gram matching
+  prefix: 0.7,
+  // Reduced from 0.9 for better granularity
+  substring: 0.6,
+  // Reduced from 0.85
+  phonetic: 0.5,
+  // Reduced from 0.8
+  fuzzy: 0.6,
+  // Reduced from 0.9, will be penalized by distance
+  fuzzyMin: 0.1,
+  // Reduced from 0.3 for wider range
+  synonym: 0.4,
+  // Reduced from 0.75
+  compound: 0.6,
+  // Reduced from 0.9
+  ngram: 0.5
+  // Reduced from 0.8
 };
 const DEFAULT_SCORING_MODIFIERS = {
   baseScore: 0.6,
@@ -30,7 +31,8 @@ const DEFAULT_CONFIG = {
   performance: "balanced",
   maxResults: 10,
   minQueryLength: 2,
-  fuzzyThreshold: 0.75,
+  fuzzyThreshold: 0.3,
+  // Reduced from 0.75 for better recall
   maxEditDistance: 2,
   ngramSize: 3,
   enableAlphanumericSegmentation: true,
@@ -46,46 +48,54 @@ const PERFORMANCE_CONFIGS = {
     performance: "fast",
     features: ["partial-words", "missing-letters"],
     maxEditDistance: 1,
-    fuzzyThreshold: 0.9,
+    fuzzyThreshold: 0.4,
+    // Reduced from 0.9 for better recall
     maxResults: 3,
     enableAlphanumericSegmentation: true,
     // Enabled in fast mode
     matchTypeScores: {
       exact: 1,
-      prefix: 0.95,
-      // Higher - prioritize exact/prefix in fast mode
-      substring: 0.7,
+      prefix: 0.8,
+      // Higher than default but still granular
+      substring: 0.5,
       // Lower - less important
-      fuzzy: 1,
-      fuzzyMin: 0.5
-      // Higher minimum - stricter matching
+      fuzzy: 0.7,
+      fuzzyMin: 0.2
+      // Higher minimum than default but still low
     }
   },
   balanced: {
     performance: "balanced",
-    features: ["phonetic", "partial-words", "missing-letters", "keyboard-neighbors"],
+    features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 2,
-    fuzzyThreshold: 0.75,
-    maxResults: 5,
+    fuzzyThreshold: 0.3,
+    // Reduced from 0.75 for better recall
+    maxResults: 10,
     enableAlphanumericSegmentation: true
-    // Enabled in balanced mode
-    // Uses default scoring
+    // Uses default scoring for balanced performance
   },
   comprehensive: {
     performance: "comprehensive",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 3,
-    fuzzyThreshold: 0.7,
-    maxResults: 10,
+    fuzzyThreshold: 0.2,
+    // Reduced from default for maximum recall
+    maxResults: 20,
     enableAlphanumericSegmentation: true,
-    // Enabled in comprehensive mode
     matchTypeScores: {
-      phonetic: 0.75,
-      // Higher - more weight on phonetic
-      synonym: 0.65,
-      // Higher - more weight on synonyms
-      fuzzyMin: 0.2
-      // Lower - more lenient
+      exact: 1,
+      prefix: 0.6,
+      // Lower for more comprehensive results
+      substring: 0.7,
+      // Higher than prefix - prioritize substring matching
+      fuzzy: 0.5,
+      fuzzyMin: 0.05,
+      // Very low for maximum recall
+      phonetic: 0.6,
+      // Higher for comprehensive matching
+      synonym: 0.5,
+      compound: 0.7,
+      ngram: 0.6
     }
   }
 };

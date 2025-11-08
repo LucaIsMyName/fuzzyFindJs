@@ -290,10 +290,10 @@ describe('Alphanumeric Matching', () => {
       
       expect(results.length).toBeGreaterThan(0);
       // Should still score high because alpha part matches (exact alpha = 1.0, numeric mismatch = ~0)
-      // Score = 0.9 * 1.0 + 0.1 * 0 = 0.9, but with minimum 0.3 and other factors
+      // Score = 0.9 * 1.0 + 0.1 * 0 = 0.9, but with new granular scoring system
       const match = results.find(r => r.display === 'handler123');
       expect(match).toBeDefined();
-      expect(match!.score).toBeGreaterThan(0.75); // Adjusted threshold
+      expect(match!.score).toBeGreaterThan(0.5); // Lower threshold with new scoring
     });
 
     it('should respect alphanumericNumericWeight setting', () => {
