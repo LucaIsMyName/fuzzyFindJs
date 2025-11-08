@@ -14,7 +14,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Highlight.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-light-theme">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-dark-theme" disabled>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
@@ -24,9 +25,52 @@
             scroll-behavior: smooth;
         }
 
+        /* Theme variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #374151;
+            --text-tertiary: #6b7280;
+            --border-primary: #e5e7eb;
+            --border-secondary: #d1d5db;
+            --accent-primary: #2563eb;
+            --accent-secondary: #3b82f6;
+            --accent-light: #eff6ff;
+            --code-bg: #f6f8fa;
+            --code-text: #24292f;
+            --inline-code-bg: #f3f4f6;
+            --inline-code-text: #1f2937;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #e2e8f0;
+            --text-tertiary: #94a3b8;
+            --border-primary: #334155;
+            --border-secondary: #475569;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #60a5fa;
+            --accent-light: #1e3a8a;
+            --code-bg: #0d1117;
+            --code-text: #f3f4f6;
+            --inline-code-bg: #1e293b;
+            --inline-code-text: #e2e8f0;
+        }
+
         /* Geist fonts */
         body {
             font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent body from scrolling */
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         code,
@@ -38,7 +82,7 @@
         .sidebar {
             position: sticky;
             top: 0;
-            height: 100vh;
+            height: calc(100vh - 57px);
             overflow-y: auto;
             width: 320px;
         }
@@ -51,9 +95,25 @@
 
         /* Content styling */
         .content {
-            max-width: 800px;
+            /* max-width: 800px; */
             width: 100%;
             overflow-x: hidden;
+            height: calc(100vh - 57px - 40px); /* Full viewport height minus tab nav and chapter indicator space */
+            overflow-y: auto; /* Enable vertical scrolling */
+            padding: 1rem 2rem; /* Move padding from main to content */
+        }
+
+        /* Content padding adjustments for different screen sizes */
+        @media (min-width: 768px) {
+            .content {
+                padding: 2rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .content {
+                padding: 3rem;
+            }
         }
 
         /* Prevent content overflow on mobile */
@@ -74,8 +134,27 @@
         }
 
         .content * {
-            max-width: 100%;
             word-wrap: break-word;
+        }
+
+        .content :is(
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6,
+            p,
+            ul,
+            ol,
+            li,
+            pre,
+            blockquote,
+            table,
+            th,
+            td
+        ) {
+            max-width: var(--content-max-width, 800px);
         }
 
         .content h1 {
@@ -83,16 +162,16 @@
             font-weight: 700;
             margin-top: 2rem;
             margin-bottom: 1rem;
-            color: #111827;
+            color: var(--text-primary);
         }
 
         .content h2 {
             font-size: clamp(1.25rem, 10vw, 2.5rem);
             font-weight: 700;
-            margin-top: 3rem;
+            margin-top: 0;
             margin-bottom: 1rem;
-            color: #111827;
-            border-bottom: 1px solid #e5e7eb;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-primary);
             padding-bottom: 0.5rem;
         }
 
@@ -101,7 +180,7 @@
             font-weight: 600;
             margin-top: 2rem;
             margin-bottom: 0.75rem;
-            color: #1f2937;
+            color: var(--text-secondary);
         }
 
         .content h4 {
@@ -109,7 +188,7 @@
             font-weight: 600;
             margin-top: 1.5rem;
             margin-bottom: 0.5rem;
-            color: #374151;
+            color: var(--text-tertiary);
         }
 
         .content h5 {
@@ -117,7 +196,7 @@
             font-weight: 600;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            color: #4b5563;
+            color: var(--text-tertiary);
         }
 
         .content h6 {
@@ -125,20 +204,20 @@
             font-weight: 600;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            color: #6b7280;
+            color: var(--text-tertiary);
         }
 
         .content p {
             margin-bottom: 1rem;
             line-height: 1.75;
-            color: #374151;
+            color: var(--text-secondary);
         }
 
         .content ul,
         .content ol {
             margin-bottom: 1rem;
             padding-left: 1.5rem;
-            color: #374151;
+            color: var(--text-secondary);
             list-style: none;
         }
 
@@ -152,7 +231,7 @@
             content: "→";
             position: absolute;
             left: 0;
-            color: #2563eb;
+            color: var(--accent-primary);
             font-weight: bold;
         }
 
@@ -171,19 +250,20 @@
             content: counter(list-counter) ".";
             position: absolute;
             left: 0;
-            color: #2563eb;
+            color: var(--accent-primary);
             font-weight: 600;
         }
 
         .content pre {
-            background-color: #0d1117;
-            color: #f3f4f6;
+            background-color: var(--code-bg);
+            color: var(--code-text);
             padding: 1rem;
             overflow-x: auto;
             margin-bottom: 1rem;
             border-radius: 0.5rem;
             font-size: 0.875rem;
             line-height: 1.5;
+            position: relative;
         }
 
         .content pre code {
@@ -191,8 +271,8 @@
         }
 
         :is(p, ul, ol, li, h1, h2, h3, h4, h5, h6, pre) code {
-            background-color: #f3f4f6;
-            color: #1f2937;
+            background-color: var(--inline-code-bg);
+            color: var(--inline-code-text);
             padding: 0.125rem 0.25rem;
             border-radius: 0.25rem;
             font-family: 'Geist Mono', monospace;
@@ -206,7 +286,7 @@
         }
 
         .content a {
-            color: #2563eb;
+            color: var(--accent-primary);
             text-decoration: none;
         }
 
@@ -217,14 +297,13 @@
         .content blockquote {
             padding-left: 1rem;
             margin: 1rem 0;
-            color: #6b7280;
+            color: var(--text-tertiary);
             /* font-style: italic; */
-            background-color: #f9fafb;
+            background-color: var(--bg-secondary);
             padding-bottom: 0.5em;
             padding-top: 1em;
-            border: 1px solid #e5e7eb;
-            border-left: 4px solid #e5e7eb;
-
+            border: 1px solid var(--border-primary);
+            border-left: 4px solid var(--border-primary);
         }
 
         .content table {
@@ -235,13 +314,13 @@
 
         .content th,
         .content td {
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-primary);
             padding: 0.5rem;
             text-align: left;
         }
 
         .content th {
-            background-color: #f9fafb;
+            background-color: var(--bg-secondary);
             font-weight: 600;
         }
 
@@ -249,21 +328,21 @@
         .nav-link {
             display: block;
             padding: 0.5rem 1rem;
-            color: #6b7280;
+            color: var(--text-tertiary);
             text-decoration: none;
             transition: all 0.2s;
-            border-left: 2px solid transparent;
+            /* border-left: 2px solid transparent; */
         }
 
         .nav-link:hover {
-            color: #111827;
-            background-color: #f9fafb;
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
         }
 
         .nav-link.active {
-            color: #2563eb;
-            border-left-color: #2563eb;
-            background-color: #eff6ff;
+            color: var(--accent-primary);
+            /* border-left-color: var(--accent-primary); */
+            background-color: var(--accent-light);
             font-weight: 600;
         }
 
@@ -281,7 +360,7 @@
         .nav-h4 {
             font-size: 0.8rem;
             padding-left: 2rem;
-            color: #9ca3af;
+            color: var(--text-tertiary);
             font-weight: 400;
         }
 
@@ -289,7 +368,7 @@
         .nav-h6 {
             font-size: 0.75rem;
             padding-left: 2.5rem;
-            color: #9ca3af;
+            color: var(--text-tertiary);
             font-weight: 400;
         }
 
@@ -301,18 +380,132 @@
             scroll-margin-top: 2rem;
         }
 
-        /* Mobile menu */
+        /* Tab navigation styling */
+        .tab-nav {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            color: var(--text-tertiary);
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            color: var(--text-secondary);
+            background-color: var(--bg-secondary);
+        }
+
+        .tab-button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background-color: var(--accent-light);
+        }
+
+        .tab-container {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #d1d5db #f9fafb;
+        }
+
+        .tab-container::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .tab-container::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .tab-container::-webkit-scrollbar-thumb {
+            background: var(--border-secondary);
+            border-radius: 3px;
+        }
+
+        /* Main content area with tabs */
+        .main-wrapper {
+            display: flex;
+            height: calc(100vh - 57px); /* 57px is tab nav height */
+            overflow: hidden; /* Prevent main wrapper from scrolling */
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-primary);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-secondary);
+            border-color: var(--border-secondary);
+        }
+
+        /* Copy button for code blocks */
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-primary);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0;
+            z-index: 10;
+        }
+
+        .content pre:hover .copy-button {
+            opacity: 1;
+        }
+
+        .copy-button:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
+            opacity: 1 !important;
+        }
+
+        .copy-button.copied {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+            opacity: 1 !important;
+        }
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
                 left: -100%;
-                top: 0;
+                top: 57px; /* Account for tab nav */
                 width: 80%;
                 max-width: 300px;
-                background: white;
+                background: var(--bg-primary);
                 z-index: 50;
                 transition: left 0.3s;
-                border-right: 1px solid #e5e7eb;
+                border-right: 1px solid var(--border-primary);
+                height: calc(100vh - 57px);
+                overflow-y: auto;
             }
 
             .sidebar.open {
@@ -330,14 +523,33 @@
             .mobile-overlay.open {
                 display: block;
             }
+
+            /* Mobile content adjustments */
+            .main-wrapper {
+                height: calc(100vh - 57px);
+            }
         }
     </style>
 </head>
 
-<body class="bg-white">
+<body class="">
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <div class="tab-container" id="tab-container">
+            <!-- Tabs will be generated here -->
+        </div>
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" style="position: static; margin-left: auto; margin-right: 1rem;">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path class="sun-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" style="display: block;"></path>
+                <path class="moon-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" style="display: none;"></path>
+            </svg>
+        </button>
+    </div>
+
     <!-- Mobile Menu Button -->
     <button id="mobile-menu-btn"
-        class="md:hidden fixed top-4 left-4 z-50 bg-gray-900 text-white p-2 border border-gray-700">
+        class="md:hidden fixed top-20 left-4 z-50 bg-gray-900 text-white p-2 border border-gray-700">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
@@ -346,12 +558,12 @@
     <!-- Mobile Overlay -->
     <div id="mobile-overlay" class="mobile-overlay"></div>
 
-    <div class="flex">
+    <div class="main-wrapper">
         <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar bg-white border-r border-gray-200 p-6">
+        <aside id="sidebar" class="sidebar bg-white border-r border-gray-200 p-6" style="background-color: var(--bg-primary); border-color: var(--border-primary);">
             <div class="mb-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-2">FuzzyFindJS</h2>
-                <p class="text-sm text-gray-600">Documentation</p>
+                <h2 class="text-xl font-bold text-gray-900 mb-2" style="color: var(--text-primary);">FuzzyFindJS</h2>
+                <p class="text-sm text-gray-600" id="current-doc-title" style="color: var(--text-tertiary);">Documentation</p>
             </div>
             <nav id="nav-menu" class="space-y-1">
                 <!-- Navigation will be generated here -->
@@ -359,23 +571,187 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 p-4 md:p-8 lg:p-12 min-w-0">
+        <main class="flex-1 min-w-0 flex flex-col">
             <!-- Chapter indicator -->
-            <div id="chapter-indicator" class="mb-6 text-sm text-gray-500 hidden">
+            <div id="chapter-indicator" class="sr-only p-4 px-8 mb-6 text-sm text-gray-500 hidden flex-shrink-0">
                 <span id="chapter-progress"></span>
             </div>
-
-            <div class="content" id="content">
-                <div class="text-center py-12">
-                    <div class="inline-block animate-spin h-8 w-8 border-4 border-gray-900 border-t-transparent mb-4">
+            <div class="content  mx-auto" id="content">
+                <div class="text-center py-8 ">
+                    <div class="inline-block animate-spin h-8 w-8 border-4 border-gray-900 border-t-transparent mb-4" style="border-color: var(--text-primary) transparent transparent transparent;">
                     </div>
-                    <p class="text-gray-600">Loading documentation...</p>
+                    <p class="text-gray-600" style="color: var(--text-tertiary);">Loading documentation...</p>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
+        // Theme management
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = themeToggle.querySelector('.sun-icon');
+        const moonIcon = themeToggle.querySelector('.moon-icon');
+        const hljsLightTheme = document.getElementById('hljs-light-theme');
+        const hljsDarkTheme = document.getElementById('hljs-dark-theme');
+        
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+            setTheme(theme);
+        }
+        
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+                hljsLightTheme.disabled = true;
+                hljsDarkTheme.disabled = false;
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+                hljsLightTheme.disabled = false;
+                hljsDarkTheme.disabled = true;
+            }
+            localStorage.setItem('theme', theme);
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+        
+        themeToggle.addEventListener('click', toggleTheme);
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+        
+        // Copy to clipboard functionality
+        function copyCodeToClipboard(button) {
+            const pre = button.closest('pre');
+            if (!pre) {
+                console.error('Could not find parent pre element');
+                return;
+            }
+            
+            const code = pre.querySelector('code');
+            if (!code) {
+                console.error('Could not find code element within pre');
+                return;
+            }
+            
+            // Try multiple methods to get the text content
+            let text = '';
+            if (code.innerText) {
+                text = code.innerText.trim();
+            } else if (code.textContent) {
+                text = code.textContent.trim();
+            } else {
+                console.error('No text found to copy');
+                return;
+            }
+            
+            console.log('Attempting to copy text:', text.substring(0, 100) + (text.length > 100 ? '...' : ''));
+            
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    console.log('Clipboard API successful');
+                    showCopySuccess(button);
+                }).catch(err => {
+                    console.error('Clipboard API failed:', err);
+                    fallbackCopyTextToClipboard(text, button);
+                });
+            } else {
+                // Fallback for older browsers
+                console.log('Using fallback copy method');
+                fallbackCopyTextToClipboard(text, button);
+            }
+        }
+        
+        function showCopySuccess(button) {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.add('copied');
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('copied');
+            }, 2000);
+        }
+        
+        function fallbackCopyTextToClipboard(text, button) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    console.log('Fallback copy successful');
+                    showCopySuccess(button);
+                } else {
+                    console.error('Fallback copy failed');
+                }
+            } catch (err) {
+                console.error('Fallback copy error:', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        function addCopyButtonsToCode() {
+            const codeBlocks = document.querySelectorAll('.content pre');
+            console.log(`Found ${codeBlocks.length} code blocks`);
+            
+            codeBlocks.forEach((pre, index) => {
+                // Check if copy button already exists
+                if (pre.querySelector('.copy-button')) {
+                    console.log(`Copy button already exists for block ${index}`);
+                    return;
+                }
+                
+                // Ensure pre element has relative positioning for absolute positioning to work
+                if (getComputedStyle(pre).position === 'static') {
+                    pre.style.position = 'relative';
+                }
+                
+                const copyButton = document.createElement('button');
+                copyButton.className = 'copy-button';
+                copyButton.textContent = 'Copy';
+                copyButton.setAttribute('aria-label', 'Copy code to clipboard');
+                copyButton.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log(`Copy button clicked for block ${index}`);
+                    copyCodeToClipboard(copyButton);
+                };
+                
+                // Also add double-click as backup
+                pre.addEventListener('dblclick', (e) => {
+                    e.preventDefault();
+                    console.log(`Double-click detected on block ${index}`);
+                    copyCodeToClipboard(copyButton);
+                });
+                
+                pre.appendChild(copyButton);
+                console.log(`Added copy button to block ${index}`);
+            });
+        }
+        
         // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const sidebar = document.getElementById('sidebar');
@@ -391,11 +767,81 @@
             mobileOverlay.classList.remove('open');
         });
 
-        // Fetch and render README
+        // Initialize tabs and load documentation
+        async function initializeApp() {
+            createTabNavigation();
+            await loadDocumentation();
+        }
+
+        // Create tab navigation
+        function createTabNavigation() {
+            const tabContainer = document.getElementById('tab-container');
+            let tabsHTML = '';
+
+            markdownFiles.forEach((file, index) => {
+                tabsHTML += `
+                    <button class="tab-button ${index === currentFileIndex ? 'active' : ''}" 
+                            data-file-index="${index}">
+                        ${file.title}
+                    </button>
+                `;
+            });
+
+            tabContainer.innerHTML = tabsHTML;
+
+            // Add click handlers for tabs
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const fileIndex = parseInt(button.dataset.fileIndex);
+                    switchToFile(fileIndex);
+                });
+            });
+        }
+
+        // Switch to specific markdown file
+        async function switchToFile(fileIndex) {
+            if (fileIndex < 0 || fileIndex >= markdownFiles.length) return;
+
+            currentFileIndex = fileIndex;
+            currentChapterIndex = 0; // Reset to first chapter
+            chapters = []; // Clear chapters
+
+            // Update tab states
+            document.querySelectorAll('.tab-button').forEach((button, index) => {
+                button.classList.toggle('active', index === fileIndex);
+            });
+
+            // Update sidebar title
+            const currentDocTitle = document.getElementById('current-doc-title');
+            currentDocTitle.textContent = `${markdownFiles[fileIndex].title} Documentation`;
+
+            // Load and render the file
+            await loadDocumentation();
+
+            // Save state
+            saveStateToStorage();
+            updateURL();
+
+            // Close mobile menu
+            sidebar.classList.remove('open');
+            mobileOverlay.classList.remove('open');
+        }
+
+        // Fetch and render current documentation
         async function loadDocumentation() {
             try {
-                const response = await fetch('../README.md');
-                const markdown = await response.text();
+                const currentFile = markdownFiles[currentFileIndex];
+                
+                // Check cache first
+                if (!fileContents[currentFile.file]) {
+                    const response = await fetch(`../${currentFile.file}`);
+                    if (!response.ok) {
+                        throw new Error(`Failed to load ${currentFile.file}`);
+                    }
+                    fileContents[currentFile.file] = await response.text();
+                }
+
+                const markdown = fileContents[currentFile.file];
 
                 // Parse markdown to HTML
                 const html = marked.parse(markdown);
@@ -407,6 +853,9 @@
                 document.querySelectorAll('pre code').forEach((block) => {
                     hljs.highlightElement(block);
                 });
+                
+                // Add copy buttons to code blocks
+                addCopyButtonsToCode();
 
                 // Generate navigation
                 generateNavigation();
@@ -422,8 +871,16 @@
         }
 
         // Global state
+        let markdownFiles = [
+            { file: 'README.md', title: 'README' },
+            { file: 'FQL.md', title: 'FQL' },
+            // { file: 'PUBLISHING.md', title: 'Publishing' },
+            { file: 'QUICK_START.md', title: 'Quick Start' }
+        ];
+        let currentFileIndex = 0;
         let chapters = [];
         let currentChapterIndex = 0;
+        let fileContents = {}; // Cache for file contents
 
         function generateNavigation() {
             const content = document.getElementById('content');
@@ -469,8 +926,8 @@
             updateNavigationMenu();
 
             // Show chapter from URL or first chapter
-            const urlChapter = getChapterFromURL();
-            showChapter(urlChapter);
+            const state = getStateFromURL();
+            showChapter(state.chapter);
         }
 
         function updateNavigationMenu() {
@@ -480,7 +937,7 @@
             chapters.forEach((chapter, index) => {
                 // Add separator before each chapter (except first)
                 if (index > 0 && index !== currentChapterIndex && currentChapterIndex !== index - 1) {
-                    navHTML += '<div class="h-px bg-gray-200 my-2"></div>';
+                    navHTML += '<div class="sr-only h-px bg-gray-200 my-2"></div>';
                 }
 
                 // Chapter link
@@ -571,6 +1028,9 @@
             content.querySelectorAll('pre code').forEach((block) => {
                 hljs.highlightElement(block);
             });
+            
+            // Add copy buttons to code blocks
+            addCopyButtonsToCode();
 
             // Add navigation buttons
             addNavigationButtons();
@@ -593,8 +1053,9 @@
             indicator.classList.remove('hidden');
             progress.textContent = `Chapter ${index + 1} of ${chapters.length}`;
             
-            // Update URL
-            updateURL(index);
+            // Update URL and save state
+            updateURL();
+            saveStateToStorage();
         }
 
         function addNavigationButtons() {
@@ -643,41 +1104,91 @@
 
 
         // URL management
-        function updateURL(chapterIndex) {
-            const chapter = chapters[chapterIndex];
+        function updateURL() {
+            const currentFile = markdownFiles[currentFileIndex];
+            const chapter = chapters[currentChapterIndex];
+            
             if (chapter) {
-                const slug = chapter.title
+                const chapterSlug = chapter.title
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-|-$/g, '');
-                const newURL = `${window.location.pathname}#${slug}`;
-                window.history.pushState({ chapter: chapterIndex }, '', newURL);
+                const newURL = `${window.location.pathname}#${currentFile.file}/${chapterSlug}`;
+                window.history.pushState({ 
+                    file: currentFileIndex, 
+                    chapter: currentChapterIndex 
+                }, '', newURL);
+            } else {
+                const newURL = `${window.location.pathname}#${currentFile.file}`;
+                window.history.pushState({ 
+                    file: currentFileIndex, 
+                    chapter: 0 
+                }, '', newURL);
             }
         }
 
-        function getChapterFromURL() {
+        function getStateFromURL() {
             const hash = window.location.hash.slice(1); // Remove #
-            if (!hash) return 0;
+            if (!hash) return { file: 0, chapter: 0 };
             
-            // Find chapter by slug
-            const chapterIndex = chapters.findIndex(chapter => {
-                const slug = chapter.title
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-|-$/g, '');
-                return slug === hash;
-            });
+            // Parse hash format: filename/chapter-slug or just filename
+            const parts = hash.split('/');
+            const fileName = parts[0];
+            const chapterSlug = parts[1];
             
-            return chapterIndex >= 0 ? chapterIndex : 0;
+            // Find file index
+            const fileIndex = markdownFiles.findIndex(file => file.file === fileName);
+            const finalFileIndex = fileIndex >= 0 ? fileIndex : 0;
+            
+            // If we have a chapter slug, find the chapter
+            if (chapterSlug && chapters.length > 0) {
+                const chapterIndex = chapters.findIndex(chapter => {
+                    const slug = chapter.title
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, '');
+                    return slug === chapterSlug;
+                });
+                return { file: finalFileIndex, chapter: chapterIndex >= 0 ? chapterIndex : 0 };
+            }
+            
+            return { file: finalFileIndex, chapter: 0 };
+        }
+
+        // Storage management
+        function saveStateToStorage() {
+            const state = {
+                file: currentFileIndex,
+                chapter: currentChapterIndex
+            };
+            localStorage.setItem('docs-state', JSON.stringify(state));
+        }
+
+        function loadStateFromStorage() {
+            try {
+                const saved = localStorage.getItem('docs-state');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+            } catch (e) {
+                console.warn('Failed to load state from storage:', e);
+            }
+            return { file: 0, chapter: 0 };
         }
 
         // Handle browser back/forward
-        window.addEventListener('popstate', (e) => {
-            if (e.state && typeof e.state.chapter === 'number') {
-                showChapter(e.state.chapter);
+        window.addEventListener('popstate', async (e) => {
+            if (e.state && typeof e.state.file === 'number') {
+                // Switch to the file from the state
+                await switchToFile(e.state.file);
+                if (typeof e.state.chapter === 'number') {
+                    showChapter(e.state.chapter);
+                }
             } else {
-                const chapterIndex = getChapterFromURL();
-                showChapter(chapterIndex);
+                // Parse from URL
+                const state = getStateFromURL();
+                await switchToFile(state.file);
+                showChapter(state.chapter);
             }
         });
 
@@ -694,7 +1205,23 @@
         });
 
         // Load documentation on page load
-        loadDocumentation();
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize theme
+            initTheme();
+            
+            // Try to restore state from storage or URL
+            const storageState = loadStateFromStorage();
+            const urlState = getStateFromURL();
+            
+            // Use URL state if available, otherwise storage state
+            const initialState = window.location.hash ? urlState : storageState;
+            
+            // Initialize with the determined state
+            currentFileIndex = initialState.file;
+            currentChapterIndex = initialState.chapter;
+            
+            await initializeApp();
+        });
     </script>
 </body>
 

@@ -2960,163 +2960,33 @@ try {
 
 ## 🍥 FQL (Fuzzy Query Language)
 
-> **⚠️ BETA FEATURE**: FQL is currently in beta. Be aware of potential security and performance concerns when using FQL with untrusted user input. Consider implementing query timeouts and input validation in production environments.
+> **⚠️ BETA FEATURE**: FQL is currently in beta. Be aware of potential security and performance concerns when using FQL with untrusted user input.
 
 FQL allows complex boolean searches with AND, OR, NOT operators combined with fuzzy matching. Enable it via `options.enableFQL` in your search calls.
-
-### Enabling FQL
-
-FQL must be explicitly enabled in search options:
 
 ```typescript
 import { buildFuzzyIndex, getSuggestions } from 'fuzzyfindjs';
 
-const dictionary = [
-  'JavaScript programming',
-  'TypeScript development',
-  'Python programming',
-  'Java development',
-  'React framework',
-  'Angular framework'
-];
+const index = buildFuzzyIndex(['JavaScript programming', 'Python development']);
 
-const index = buildFuzzyIndex(dictionary, {
-  config: {
-    languages: ['english'],
-    fuzzyThreshold: 0.3
-  }
-});
-
-// Enable FQL in search options
+// Enable FQL for complex boolean searches
 const results = getSuggestions(index, 'javascript AND programming', 10, {
   enableFQL: true,
   fqlOptions: {
-    allowRegex: false,  // Disable regex for security
-    timeout: 5000       // 5 second timeout
+    allowRegex: false,  // Security: prevent regex attacks
+    timeout: 5000       // Performance: fail fast
   }
 });
 ```
-
-### Query Syntax
 
 **Basic Operators:**
+- `AND` - Both terms must match
+- `OR` - Either term can match  
+- `NOT` - Exclude matches
+- `( )` - Group expressions
+- `" "` - Exact phrase matching
 
-```typescript
-// AND - both terms must match
-const results1 = getSuggestions(index, 'javascript AND programming', 10, {
-  enableFQL: true
-});
-// Returns: ['JavaScript programming']
-
-// OR - either term can match
-const results2 = getSuggestions(index, 'react OR angular', 10, {
-  enableFQL: true
-});
-// Returns: ['React framework', 'Angular framework']
-
-// NOT - exclude matches
-const results3 = getSuggestions(index, 'programming NOT python', 10, {
-  enableFQL: true
-});
-// Returns: ['JavaScript programming']
-```
-
-**Complex Queries:**
-
-```typescript
-// Parentheses for grouping
-const results4 = getSuggestions(index, '(javascript OR typescript) AND programming', 10, {
-  enableFQL: true
-});
-// Returns: ['JavaScript programming', 'TypeScript development']
-
-// Quoted phrases for exact matching
-const results5 = getSuggestions(index, '"react framework"', 10, {
-  enableFQL: true
-});
-// Returns: ['React framework']
-
-// Nested boolean logic
-const results6 = getSuggestions(index, '(term1 AND term2) OR (term3 AND term4)', 10, {
-  enableFQL: true
-});
-```
-
-### FQL Options
-
-```typescript
-interface FQLOptions {
-  allowRegex?: boolean;  // Allow regex patterns (default: false, security risk)
-  timeout?: number;      // Query timeout in ms (default: 10000)
-}
-
-// Example with options
-const results = getSuggestions(index, 'complex AND query', 10, {
-  enableFQL: true,
-  fqlOptions: {
-    allowRegex: false,  // Recommended for production
-    timeout: 3000       // Fail after 3 seconds
-  }
-});
-```
-
-### Operators Reference
-
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `AND` | Both terms must match | `term1 AND term2` |
-| `OR` | Either term can match | `term1 OR term2` |
-| `NOT` | Exclude matches | `term1 NOT term2` |
-| `( )` | Group expressions | `(term1 OR term2) AND term3` |
-| `" "` | Exact phrase | `"exact phrase"` |
-
-### Error Handling
-
-```typescript
-try {
-  const results = getSuggestions(index, 'invalid AND (query', 10, {
-    enableFQL: true
-  });
-} catch (error) {
-  console.error('FQL query failed:', error.message);
-  // Handle syntax errors or timeouts
-}
-```
-
-### Security Considerations
-
-When using FQL with user input:
-
-1. **Disable regex**: Set `allowRegex: false` to prevent ReDoS attacks
-2. **Set timeouts**: Use `timeout` option to prevent long-running queries
-3. **Validate input**: Sanitize user queries before execution
-4. **Rate limiting**: Implement rate limiting for FQL queries
-
-```typescript
-// Production-safe FQL configuration
-const results = getSuggestions(index, userQuery, 10, {
-  enableFQL: true,
-  fqlOptions: {
-    allowRegex: false,  // Security: prevent regex attacks
-    timeout: 2000       // Performance: fail fast
-  }
-});
-```
-
-### Performance Notes
-
-- FQL queries are slower than simple fuzzy searches
-- Complex nested queries can be computationally expensive
-- Use timeouts to prevent performance degradation
-- Consider caching FQL results for repeated queries
-
-### Use Cases
-
-- Advanced search interfaces with boolean logic
-- Document search with multiple required terms
-- E-commerce product filtering with complex rules
-- Power user search features
-- Technical documentation search
+📖 **For detailed documentation, examples, and advanced features, see the [FQL Documentation](./FQL.md) tab.**
 
 
 ## 🧪 Algorithm Details
@@ -3664,14 +3534,6 @@ MIT © Luca Mack
 - [NPM Package](https://www.npmjs.com/package/fuzzyfindjs)
 - [Issue Tracker](https://github.com/LucaIsMyName/fuzzyfindjs/issues)
 - [Interactive Demo](https://github.com/LucaIsMyName/fuzzyfindjs#-try-the-interactive-demo) - Run locally with `npm run dev`
-
-## 📚 Additional Documentation
-
-- **[DEMO.md](./DEMO.md)** - Complete demo dashboard guide with testing scenarios
-- **[QUICK_START.md](./QUICK_START.md)** - Quick reference for the demo
-- **[PUBLISHING.md](./PUBLISHING.md)** - NPM publishing guide
-- **[CHANGELOG.md](./CHANGELOG.md)** - Version history and changes
-- **[LOCALSTORAGE_FEATURE.md](./LOCALSTORAGE_FEATURE.md)** - Demo persistence feature details
 
 ## 📝 IDE Support & IntelliSense
 
