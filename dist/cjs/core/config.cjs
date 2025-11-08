@@ -33,7 +33,7 @@ const DEFAULT_CONFIG = {
   performance: "balanced",
   maxResults: 10,
   minQueryLength: 2,
-  fuzzyThreshold: 0.55,
+  fuzzyThreshold: 0.45,
   // Balanced threshold - allows fuzzy matches, substring penalty filters garbage
   maxEditDistance: 2,
   ngramSize: 3,
@@ -50,7 +50,7 @@ const PERFORMANCE_CONFIGS = {
     performance: "fast",
     features: ["partial-words", "missing-letters"],
     maxEditDistance: 1,
-    fuzzyThreshold: 0.7,
+    fuzzyThreshold: 0.55,
     // Higher threshold in fast mode for quality
     maxResults: 3,
     enableAlphanumericSegmentation: true,
@@ -70,7 +70,7 @@ const PERFORMANCE_CONFIGS = {
     performance: "balanced",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 2,
-    fuzzyThreshold: 0.55,
+    fuzzyThreshold: 0.45,
     // Balanced mode - good quality/recall tradeoff
     maxResults: 10,
     enableAlphanumericSegmentation: true
@@ -80,7 +80,7 @@ const PERFORMANCE_CONFIGS = {
     performance: "comprehensive",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 3,
-    fuzzyThreshold: 0.5,
+    fuzzyThreshold: 0.4,
     // Comprehensive mode - lower for better recall
     maxResults: 20,
     enableAlphanumericSegmentation: true,

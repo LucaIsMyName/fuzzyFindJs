@@ -750,7 +750,7 @@ function calculateMatchScore(
         const relativePos = substringPos / match.normalized.length;
         // Exponential penalty for late positions - more aggressive for very late matches
         // Early (0-30%): minimal penalty, Late (30-70%): moderate, Very late (70%+): heavy
-        const positionPenalty = 0.25 * Math.pow(relativePos, 1.5);
+        const positionPenalty = 0.30 * Math.pow(relativePos, 2.0);
         score -= positionPenalty;
       }
       break;

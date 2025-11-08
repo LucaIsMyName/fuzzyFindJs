@@ -388,7 +388,7 @@ function calculateMatchScore(match, query, config$1) {
       const substringPos = match.normalized.toLowerCase().indexOf(query.toLowerCase());
       if (substringPos !== -1) {
         const relativePos = substringPos / match.normalized.length;
-        const positionPenalty = 0.25 * Math.pow(relativePos, 1.5);
+        const positionPenalty = 0.3 * Math.pow(relativePos, 2);
         score -= positionPenalty;
       }
       break;
