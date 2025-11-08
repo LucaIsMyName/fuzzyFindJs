@@ -274,8 +274,9 @@ function getSuggestions(index, query, maxResults, options = {}) {
       break;
     }
     findPrefixMatches(normalizedQuery, index, matches, processor.language);
+    findSubstringMatches(normalizedQuery, index, matches, processor.language);
     const highQualityMatches = Array.from(matches.values()).filter(
-      (m) => m.matchType === "exact" || m.matchType === "prefix"
+      (m) => m.matchType === "exact" || m.matchType === "prefix" || m.matchType === "substring"
     );
     if (highQualityMatches.length >= limit * 2) {
       findPhoneticMatches(normalizedQuery, processor, index, matches);
@@ -375,6 +376,25 @@ function findPrefixMatches(query, index, matches, language) {
             word,
             normalized: variant,
             matchType: "prefix",
+            language
+          });
+        }
+      });
+    }
+  }
+}
+function findSubstringMatches(query, index, matches, language) {
+  const queryLower = query.toLowerCase();
+  if (queryLower.length < 2) return;
+  for (const [variant, words] of index.variantToBase.entries()) {
+    if (variant.includes(queryLower) && !variant.startsWith(queryLower) && variant !== queryLower) {
+      words.forEach((word) => {
+        const existingMatch = matches.get(word);
+        if (!existingMatch || existingMatch.matchType !== "exact" && existingMatch.matchType !== "prefix") {
+          matches.set(word, {
+            word,
+            normalized: variant,
+            matchType: "substring",
             language
           });
         }
@@ -525,6 +545,11 @@ function calculateMatchScore(match, query, config) {
       break;
     case "substring":
       score = scores.substring;
+      const substringPos = match.normalized.toLowerCase().indexOf(query.toLowerCase());
+      if (substringPos !== -1) {
+        const positionBoost = Math.max(0, 0.1 * (1 - substringPos / match.normalized.length));
+        score += positionBoost;
+      }
       break;
     case "phonetic":
       score = scores.phonetic;

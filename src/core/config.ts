@@ -14,7 +14,7 @@ import type {
 export const DEFAULT_MATCH_TYPE_SCORES: MatchTypeScores = {
   exact: 1.0,
   prefix: 0.7,        // Reduced from 0.9 for better granularity
-  substring: 0.6,     // Reduced from 0.85
+  substring: 0.75,    // Boosted from 0.6 - exact substrings should rank high
   phonetic: 0.5,      // Reduced from 0.8
   fuzzy: 0.6,         // Reduced from 0.9, will be penalized by distance
   fuzzyMin: 0.1,      // Reduced from 0.3 for wider range

@@ -574,10 +574,11 @@ export function getSuggestions(index: FuzzyIndex, query: string, maxResults?: nu
     }
     
     findPrefixMatches(normalizedQuery, index, matches, processor.language);
+    findSubstringMatches(normalizedQuery, index, matches, processor.language);
     
-    // Early termination: If we have enough high-quality matches (exact + prefix)
+    // Early termination: If we have enough high-quality matches (exact + prefix + substring)
     const highQualityMatches = Array.from(matches.values()).filter(m => 
-      m.matchType === 'exact' || m.matchType === 'prefix'
+      m.matchType === 'exact' || m.matchType === 'prefix' || m.matchType === 'substring'
     );
     if (highQualityMatches.length >= limit * 2) {
       // Continue with other strategies but be more selective
@@ -718,6 +719,34 @@ function findPrefixMatches(query: string, index: FuzzyIndex, matches: Map<string
             word,
             normalized: variant,
             matchType: "prefix",
+            language,
+          });
+        }
+      });
+    }
+  }
+}
+
+/**
+ * Find substring matches (exact substring within the word)
+ */
+function findSubstringMatches(query: string, index: FuzzyIndex, matches: Map<string, SearchMatch>, language: string): void {
+  const queryLower = query.toLowerCase();
+  
+  // Skip very short queries to avoid too many matches
+  if (queryLower.length < 2) return;
+
+  for (const [variant, words] of index.variantToBase.entries()) {
+    // Check if query is a substring (but not prefix or exact match)
+    if (variant.includes(queryLower) && !variant.startsWith(queryLower) && variant !== queryLower) {
+      words.forEach((word) => {
+        const existingMatch = matches.get(word);
+        // Don't replace exact or prefix matches with substring matches
+        if (!existingMatch || (existingMatch.matchType !== "exact" && existingMatch.matchType !== "prefix")) {
+          matches.set(word, {
+            word,
+            normalized: variant,
+            matchType: "substring",
             language,
           });
         }
@@ -928,7 +957,13 @@ function calculateMatchScore(
       break;
     case "substring":
       score = scores.substring;
-      // No position penalty for now - keep it simple
+      // Boost substring matches that appear earlier in the word
+      const substringPos = match.normalized.toLowerCase().indexOf(query.toLowerCase());
+      if (substringPos !== -1) {
+        // Earlier positions get a small boost (up to +0.1)
+        const positionBoost = Math.max(0, 0.1 * (1 - substringPos / match.normalized.length));
+        score += positionBoost;
+      }
       break;
     case "phonetic":
       score = scores.phonetic;
