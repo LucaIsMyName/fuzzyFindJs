@@ -18,8 +18,10 @@ const DEFAULT_MATCH_TYPE_SCORES = {
   // Very low - n-grams are weakest signal
 };
 const DEFAULT_SCORING_MODIFIERS = {
-  baseScore: 0.6,
-  shortWordBoost: 0.1,
+  baseScore: 0,
+  // Don't add base score - let match types determine score
+  shortWordBoost: 0,
+  // Disable boost - was inflating weak matches
   shortWordMaxDiff: 3,
   prefixLengthPenalty: false
 };
@@ -29,8 +31,8 @@ const DEFAULT_CONFIG = {
   performance: "balanced",
   maxResults: 10,
   minQueryLength: 2,
-  fuzzyThreshold: 0.65,
-  // Higher threshold - filters garbage while keeping quality matches
+  fuzzyThreshold: 0.55,
+  // Balanced threshold - allows fuzzy matches, substring penalty filters garbage
   maxEditDistance: 2,
   ngramSize: 3,
   enableAlphanumericSegmentation: true,
@@ -47,7 +49,7 @@ const PERFORMANCE_CONFIGS = {
     features: ["partial-words", "missing-letters"],
     maxEditDistance: 1,
     fuzzyThreshold: 0.7,
-    // High threshold in fast mode for quality
+    // Higher threshold in fast mode for quality
     maxResults: 3,
     enableAlphanumericSegmentation: true,
     // Enabled in fast mode
@@ -66,7 +68,7 @@ const PERFORMANCE_CONFIGS = {
     performance: "balanced",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 2,
-    fuzzyThreshold: 0.6,
+    fuzzyThreshold: 0.55,
     // Balanced mode - good quality/recall tradeoff
     maxResults: 10,
     enableAlphanumericSegmentation: true
@@ -77,7 +79,7 @@ const PERFORMANCE_CONFIGS = {
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 3,
     fuzzyThreshold: 0.5,
-    // Comprehensive mode - lower but still filters garbage
+    // Comprehensive mode - lower for better recall
     maxResults: 20,
     enableAlphanumericSegmentation: true,
     matchTypeScores: {

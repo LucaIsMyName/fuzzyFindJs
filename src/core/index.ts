@@ -744,12 +744,14 @@ function calculateMatchScore(
       break;
     case "substring":
       score = scores.substring;
-      // Boost substring matches that appear earlier in the word
+      // Penalize substring matches that appear later in the word
       const substringPos = match.normalized.toLowerCase().indexOf(query.toLowerCase());
       if (substringPos !== -1) {
-        // Earlier positions get a small boost (up to +0.1)
-        const positionBoost = Math.max(0, 0.1 * (1 - substringPos / match.normalized.length));
-        score += positionBoost;
+        const relativePos = substringPos / match.normalized.length;
+        // Exponential penalty for late positions - more aggressive for very late matches
+        // Early (0-30%): minimal penalty, Late (30-70%): moderate, Very late (70%+): heavy
+        const positionPenalty = 0.25 * Math.pow(relativePos, 1.5);
+        score -= positionPenalty;
       }
       break;
     case "phonetic":

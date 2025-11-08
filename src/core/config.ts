@@ -28,8 +28,8 @@ export const DEFAULT_MATCH_TYPE_SCORES: MatchTypeScores = {
  * These values control additional scoring behavior
  */
 export const DEFAULT_SCORING_MODIFIERS: ScoringModifiers = {
-  baseScore: 0.6,
-  shortWordBoost: 0.1,
+  baseScore: 0.0,           // Don't add base score - let match types determine score
+  shortWordBoost: 0.0,      // Disable boost - was inflating weak matches
   shortWordMaxDiff: 3,
   prefixLengthPenalty: false,
 };
@@ -44,7 +44,7 @@ export const DEFAULT_CONFIG: FuzzyConfig = {
   performance: "balanced",
   maxResults: 10,
   minQueryLength: 2,
-  fuzzyThreshold: 0.65,     // Higher threshold - filters garbage while keeping quality matches
+  fuzzyThreshold: 0.55,     // Balanced threshold - allows fuzzy matches, substring penalty filters garbage
   maxEditDistance: 2,
   ngramSize: 3,
   enableAlphanumericSegmentation: true, // Enabled by default - opt-out for performance if needed
@@ -63,7 +63,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     performance: "fast",
     features: ["partial-words", "missing-letters"],
     maxEditDistance: 1,
-    fuzzyThreshold: 0.7,      // High threshold in fast mode for quality
+    fuzzyThreshold: 0.70,     // Higher threshold in fast mode for quality
     maxResults: 3,
     enableAlphanumericSegmentation: true, // Enabled in fast mode
     matchTypeScores: {
@@ -78,7 +78,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     performance: "balanced",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 2,
-    fuzzyThreshold: 0.6,      // Balanced mode - good quality/recall tradeoff
+    fuzzyThreshold: 0.55,     // Balanced mode - good quality/recall tradeoff
     maxResults: 10,
     enableAlphanumericSegmentation: true,
     // Uses default scoring for balanced performance
@@ -87,7 +87,7 @@ export const PERFORMANCE_CONFIGS: Record<string, Partial<FuzzyConfig>> = {
     performance: "comprehensive",
     features: ["phonetic", "compound", "synonyms", "keyboard-neighbors", "partial-words", "missing-letters", "extra-letters", "transpositions"],
     maxEditDistance: 3,
-    fuzzyThreshold: 0.5,      // Comprehensive mode - lower but still filters garbage
+    fuzzyThreshold: 0.50,     // Comprehensive mode - lower for better recall
     maxResults: 20,
     enableAlphanumericSegmentation: true,
     matchTypeScores: {

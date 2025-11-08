@@ -387,8 +387,9 @@ function calculateMatchScore(match, query, config$1) {
       score = scores.substring;
       const substringPos = match.normalized.toLowerCase().indexOf(query.toLowerCase());
       if (substringPos !== -1) {
-        const positionBoost = Math.max(0, 0.1 * (1 - substringPos / match.normalized.length));
-        score += positionBoost;
+        const relativePos = substringPos / match.normalized.length;
+        const positionPenalty = 0.25 * Math.pow(relativePos, 1.5);
+        score -= positionPenalty;
       }
       break;
     case "phonetic":
