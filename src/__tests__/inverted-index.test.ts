@@ -44,11 +44,11 @@ describe('Inverted Index - Backwards Compatibility', () => {
     });
   });
 
-  describe('Large datasets (>= 50k words) - Inverted Index Auto-Enable', () => {
+  describe('Large datasets (>= 100k words) - Inverted Index Auto-Enable', () => {
     // Generate large dictionary
-    const largeDictionary = Array.from({ length: 50000 }, (_, i) => `Word${i}`);
+    const largeDictionary = Array.from({ length: 100000 }, (_, i) => `Word${i}`);
 
-    it('should auto-enable inverted index for 50k+ words', () => {
+    it('should auto-enable inverted index for 100k+ words', () => {
       const index = buildFuzzyIndex(largeDictionary);
       
       // Inverted index SHOULD be built automatically

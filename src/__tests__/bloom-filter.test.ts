@@ -122,7 +122,7 @@ describe("Bloom Filter", () => {
   describe("Integration with FuzzyFindJS", () => {
     it("should enable bloom filter for large datasets", () => {
       const dictionary: string[] = [];
-      for (let i = 0; i < 50000; i++) {
+      for (let i = 0; i < 100000; i++) {
         dictionary.push(`word_${i}`);
       }
       
@@ -132,13 +132,13 @@ describe("Bloom Filter", () => {
         },
       });
       
-      // Bloom filter should be auto-enabled for 50k+ words
+      // Bloom filter should be auto-enabled for 100k+ words
       expect(index.invertedIndex?.bloomFilter).toBeDefined();
     });
 
     it("should improve search performance with bloom filter", () => {
       const dictionary: string[] = [];
-      for (let i = 0; i < 50000; i++) {
+      for (let i = 0; i < 100000; i++) {
         dictionary.push(`document_${i}`);
       }
       
@@ -154,7 +154,7 @@ describe("Bloom Filter", () => {
       const duration = performance.now() - start;
       
       // Should be fast even for non-existent terms (bloom filter helps)
-      expect(duration).toBeLessThan(100);
+      expect(duration).toBeLessThan(250); // 100K items take longer than 50K
       // May find some fuzzy matches, but should be fast
       expect(results.length).toBeLessThanOrEqual(10);
     });

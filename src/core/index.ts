@@ -58,14 +58,14 @@ import { applySorting } from "./sorting.js";
  * 
  * This is the primary function for creating a searchable index. It processes each word/object
  * through language-specific processors, builds various indices (phonetic, n-gram, synonym),
- * and automatically enables optimizations like inverted index for large datasets (50k+ items).
+ * and automatically enables optimizations like inverted index for large datasets (100k+ items).
  * 
  * @param words - Array of strings to index, or objects with fields to search across
  * @param options - Configuration options for index building
  * @param options.config - Fuzzy search configuration (languages, features, thresholds)
  * @param options.languageProcessors - Custom language processors (overrides default)
  * @param options.onProgress - Callback for tracking indexing progress (processed, total)
- * @param options.useInvertedIndex - Force inverted index usage (auto-enabled for 50k+ words)
+ * @param options.useInvertedIndex - Force inverted index usage (auto-enabled for 100k+ words)
  * @param options.fields - Field names for multi-field search (required when indexing objects)
  * @param options.fieldWeights - Weight multipliers for field scoring (e.g., {title: 2.0, description: 1.0})
  * 
@@ -235,8 +235,7 @@ export function buildFuzzyIndex(words: (string | any)[] = [], options: BuildInde
   }
 
   // CACHE: Initialize search result cache if enabled (default: true)
-  const enableCache = config.enableCache !== false; // Default to true
-  if (enableCache) {
+  if (config.enableCache !== false) {
     const cacheSize = config.cacheSize || 100;
     index._cache = new SearchCache(cacheSize);
   }

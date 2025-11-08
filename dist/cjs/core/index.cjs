@@ -99,8 +99,7 @@ function buildFuzzyIndex(words = [], options = {}) {
     index$12.documents = documents;
     index$12.base = documents.map((doc) => doc.word);
   }
-  const enableCache = config$1.enableCache !== false;
-  if (enableCache) {
+  if (config$1.enableCache !== false) {
     const cacheSize = config$1.cacheSize || 100;
     index$12._cache = new cache.SearchCache(cacheSize);
   }
